@@ -23,3 +23,14 @@ function ToggleIcon(buttonElement) {
     const newClass = (currentClass === rightIconClass) ? downIconClass : rightIconClass;
     targetIcon.className = newClass;
 }
+
+export function sheetNameToggle() {
+    console.log("실행");
+    const sheetNamesButton = document.getElementsByClassName("toggleButton");
+    sheetNamesButton.array.forEach(element => {
+        element.addEventListener('click', function () {
+            const CLASSTYPE = "excel";
+            ToggleIcon(element);
+        })
+    });
+}
