@@ -76,12 +76,12 @@ footer span {
 }
 
 #sqlContainer {
-    background-color: tomato;
+    background-color: var(--gray-main);
+    border-radius: 5px;
     grid-column: 3/6;
 }
 
 button {
-
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;

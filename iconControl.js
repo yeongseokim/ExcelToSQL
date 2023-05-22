@@ -24,12 +24,11 @@ function ToggleIcon(buttonElement) {
     targetIcon.className = newClass;
 }
 
-export function sheetNameToggle() {
+function sheetNameToggle() {
     console.log("실행");
     const sheetNamesButton = document.getElementsByClassName("toggleButton");
     sheetNamesButton.array.forEach(element => {
         element.addEventListener('click', function () {
-            const CLASSTYPE = "excel";
             ToggleIcon(element);
         })
     });
