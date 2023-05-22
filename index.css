@@ -65,20 +65,27 @@ footer span {
     padding: 0px 50px;
 }
 
+main {
+    display: grid;
+    padding: 2rem 50px;
+    grid-template-columns: repeat(6, 1fr);
+    grid-gap: 1rem;
+}
+
 #excelContainer {
-    grid-column: 1/6;
-    grid-row: 1/2;
+    grid-column: 1/7;
 }
 
 #sheetsContainer {
     background-color: green;
+    border-radius: 5px;
     grid-column: 1/3;
 }
 
 #sqlContainer {
     background-color: var(--gray-main);
     border-radius: 5px;
-    grid-column: 3/6;
+    grid-column: 3/7;
 }
 
 button {

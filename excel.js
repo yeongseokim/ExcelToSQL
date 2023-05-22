@@ -1,4 +1,7 @@
 let sheetNames = [];
+let sheetState = [];
+let sheetNamesOrigin = [];
+let workBook;
 
 document.addEventListener('DOMContentLoaded', function () {
     const excelFileInput = document.getElementById('file');
@@ -9,62 +12,72 @@ document.addEventListener('DOMContentLoaded', function () {
 
         reader.onload = function (e) {
             const data = reader.result;
-            const workBook = XLSX.read(data, { type: 'binary' });
-
+            workBook = XLSX.read(data, { type: 'binary' });
+            sheetNamesOrigin = [...workBook.SheetNames];
             sheetNameHandler(workBook.SheetNames);
 
             workBook.SheetNames.forEach(function (sheetName) {
-                console.log('SheetName: ' + sheetName);
+                // console.log('SheetName: ' + sheetName);
                 let jsonData = XLSX.utils.sheet_to_json(workBook.Sheets[sheetName]);
-                drawTable(jsonData);
-                console.log(JSON.stringify(rows));
+                // console.log(JSON.stringify(jsonData));
             })
         };
         reader.readAsBinaryString(file.files[0]);
     });
 });
 
-function drawTable(jsonData) {
+function drawTable(sheetName) {
+    let jsonData = XLSX.utils.sheet_to_json(workBook.Sheets[sheetName]);
+    console.log(jsonData);
     const excelTable = document.getElementById('excelTable');
     excelTable.innerHTML = '';
-    for (let i = 0; i < jsonData.length; i++) {//그리기
-        var row = document.createElement('tr');
 
-        for (let j = 0; j < jsonData[i].length; j++) {
-            var cellData = jsonData[i][j];
-            var cellType = (j === 0) ? 'th' : 'td';
-            var cell = document.createElement(cellType);
+    const keys = Object.keys(jsonData[0]);
+    const hrow = document.createElement('tr');
+    keys.forEach((key) => {
+        const th = document.createElement('th');
+        th.textContent = key;
+        hrow.appendChild(th);
+    })
+    excelTable.appendChild(hrow);
+    console.log(excelTable);
+
+    for (let i = 0; i < jsonData.length; i++) {//그리기
+        const row = document.createElement('tr');
+        keys.forEach((key) => {
+            const cellData = jsonData[i][key];
+            const cell = document.createElement('td');
             cell.textContent = cellData;
             row.appendChild(cell);
-        }
-
+        })
         excelTable.appendChild(row);
     }
 }
 
-function readExcel() {
-    let input = event.target;
-    let reader = new FileReader(); //파일 리더
+// function readExcel() {
+//     let input = event.target;
+//     let reader = new FileReader(); //파일 리더
 
-    reader.onload = function () {
-        let data = reader.result;
-        let workBook = XLSX.read(data, { type: 'binary' });
-        sheetNameHandler(workBook.SheetNames);
+//     reader.onload = function () {
+//         let data = reader.result;
+//         let workBook = XLSX.read(data, { type: 'binary' });
+//         sheetNameHandler(workBook.SheetNames);
 
-        workBook.SheetNames.forEach(function (sheetName) {
-            console.log('SheetName: ' + sheetName);
-            let rows = XLSX.utils.sheet_to_json(workBook.Sheets[sheetName]);
-            console.log(JSON.stringify(rows));
-        })
-    };
-    reader.readAsBinaryString(input.files[0]);
-}
+//         workBook.SheetNames.forEach(function (sheetName) {
+//             console.log('SheetName: ' + sheetName);
+//             let rows = XLSX.utils.sheet_to_json(workBook.Sheets[sheetName]);
+//             console.log(JSON.stringify(rows));
+//         })
+//     };
+//     reader.readAsBinaryString(input.files[0]);
+// }
 
 function sheetNameHandler(sheetname) {
     sheetNames = sheetname;
-    console.log(sheetNames);
     const excelSheetList = document.getElementById('excelSheetList');
     const excelSheetContainer = document.getElementById('sheetsContainer');
+    excelSheetList.innerHTML = "";
+    excelSheetContainer.innerHTML = "";
 
     sheetNames.forEach(function (sheetName) {
         const sheetElement = createSheetElement(sheetName);
@@ -79,6 +92,10 @@ function createSheetElement(sheetName) {
     const sheetElement = document.createElement('div');
     sheetElement.classList.add("sheetListElement");
     sheetElement.textContent = sheetName;
+    sheetElement.addEventListener('click', function () {
+        console.log(sheetNamesOrigin[sheetNames.indexOf(sheetName)]);
+        drawTable(sheetNamesOrigin[sheetNames.indexOf(sheetName)]);
+    })
     return sheetElement;
 }
 
@@ -94,11 +111,29 @@ function createSheetButton(sheetName) {
 
     const span = document.createElement("span");
     span.innerHTML = sheetName;
-
+    span.id = sheetName;
+    span.contentEditable = true;
+    span.addEventListener("keypress", editName);
     sheetButton.appendChild(i);
     sheetButton.appendChild(span);
 
     return sheetButton;
+}
+
+function editName(e) {
+    if (window.event.keyCode == 13) {
+        e.preventDefault();
+        document.activeElement.blur();
+        const editedName = e.target.innerText;
+        editStateSheetNames(e.target.id, editedName);
+        e.target.id = editName;
+    }
+}
+
+function editStateSheetNames(id, newName) {
+    const index = sheetNames.indexOf(id);
+    sheetNames[index] = newName;
+    sheetNameHandler(sheetNames);
 }
 
 function ToggleIcon(buttonElement) {
@@ -106,4 +141,11 @@ function ToggleIcon(buttonElement) {
     const currentClass = targetIcon.className;
     const newClass = (currentClass === rightIconClass) ? downIconClass : rightIconClass;
     targetIcon.className = newClass;
+}
+
+function ToggleBlock(classtype) {
+    const targetBlock = document.getElementById(`${classtype}Behind`);
+    const currentDisplay = targetBlock.style.display;
+    const newDisplay = (currentDisplay === 'none') ? 'block' : 'none';
+    targetBlock.style.display = newDisplay;
 }
