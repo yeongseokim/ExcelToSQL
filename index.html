@@ -29,7 +29,10 @@
                 <div id="excelBehind" class="behindable excel">
                     <div id="excelleft">
                         <form>
-                            <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="readExcel()" />
+                            <label for="file">
+                                <div class="btn-upload">File Upload</div>
+                            </label>
+                            <input type="file" name="file" id="file" accept=".xlsx, .xls" onchange="readExcel()" />
                         </form>
                         <ul>
                             <li>Doctor</li>
