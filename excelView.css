@@ -16,8 +16,29 @@
 }
 
 #excelTable {
+    margin-top: 5px;
     overflow: auto;
     white-space: nowrap;
+    border-collapse: collapse;
+}
+
+#excelTable td,
+#excelTable th {
+    border: 1px solid var(--gray-light0);
+    padding: 5px;
+}
+
+#excelTable tr:nth-child(even) {
+    background-color: #ebebeb;
+}
+
+#excelTable th {
+    padding: 10px 0px;
+    background-color: var(--gray-light1);
+}
+
+#excelTable tr:hover {
+    background-color: var(--background-dark);
 }
 
 .btn-upload {
@@ -54,4 +75,5 @@
 
 .sheetListElement {
     padding: 10px;
+    padding-left: 20px;
 }

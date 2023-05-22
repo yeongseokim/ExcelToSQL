@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
 function ToggleBlock(classtype) {
     const targetBlock = document.getElementById(`${classtype}Behind`);
     const currentDisplay = targetBlock.style.display;
-    const newDisplay = (currentDisplay === 'none') ? 'block' : 'none';
+    const newDisplay = (currentDisplay === 'none') ? '' : 'none';
     targetBlock.style.display = newDisplay;
 }
 

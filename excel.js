@@ -54,6 +54,10 @@ function drawTable(sheetName) {
     }
 }
 
+function drawAttributeList() {
+
+}
+
 // function readExcel() {
 //     let input = event.target;
 //     let reader = new FileReader(); //파일 리더
