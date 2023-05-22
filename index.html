@@ -34,29 +34,14 @@
                             </label>
                             <input type="file" name="file" id="file" accept=".xlsx, .xls" onchange="readExcel()" />
                         </form>
-                        <ul>
-                            <li>Doctor</li>
-                            <li>Nurse</li>
-                            <li>Patient</li>
-                        </ul>
+                        <div id="excelSheetList">
+                        </div>
                     </div>
                     <table id="excelTable"></table>
                 </div>
             </div>
 
             <div id="sheetsContainer" class="item">
-                <button id="sheetButton" class="toggleButton">
-                    <i class="fi fi-rr-angle-small-right"></i>
-                    <span>Sheet1</span>
-                </button>
-                <button id="sheetButton" class="toggleButton">
-                    <i class="fi fi-rr-angle-small-right"></i>
-                    <span>Sheet2</span>
-                </button>
-                <button id="sheetButton" class="toggleButton">
-                    <i class="fi fi-rr-angle-small-right"></i>
-                    <span>Sheet3</span>
-                </button>
             </div>
 
             <div id="sqlContainer" class="item">
