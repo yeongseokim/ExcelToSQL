@@ -15,12 +15,6 @@ document.addEventListener('DOMContentLoaded', function () {
             workBook = XLSX.read(data, { type: 'binary' });
             sheetNamesOrigin = [...workBook.SheetNames];
             sheetNameHandler(workBook.SheetNames);
-
-            workBook.SheetNames.forEach(function (sheetName) {
-                // console.log('SheetName: ' + sheetName);
-                let jsonData = XLSX.utils.sheet_to_json(workBook.Sheets[sheetName]);
-                // console.log(JSON.stringify(jsonData));
-            })
         };
         reader.readAsBinaryString(file.files[0]);
     });
@@ -40,7 +34,6 @@ function drawTable(sheetName) {
         hrow.appendChild(th);
     })
     excelTable.appendChild(hrow);
-    console.log(excelTable);
 
     for (let i = 0; i < jsonData.length; i++) {//그리기
         const row = document.createElement('tr');
@@ -57,24 +50,6 @@ function drawTable(sheetName) {
 function drawAttributeList() {
 
 }
-
-// function readExcel() {
-//     let input = event.target;
-//     let reader = new FileReader(); //파일 리더
-
-//     reader.onload = function () {
-//         let data = reader.result;
-//         let workBook = XLSX.read(data, { type: 'binary' });
-//         sheetNameHandler(workBook.SheetNames);
-
-//         workBook.SheetNames.forEach(function (sheetName) {
-//             console.log('SheetName: ' + sheetName);
-//             let rows = XLSX.utils.sheet_to_json(workBook.Sheets[sheetName]);
-//             console.log(JSON.stringify(rows));
-//         })
-//     };
-//     reader.readAsBinaryString(input.files[0]);
-// }
 
 function sheetNameHandler(sheetname) {
     sheetNames = sheetname;
@@ -97,7 +72,6 @@ function createSheetElement(sheetName) {
     sheetElement.classList.add("sheetListElement");
     sheetElement.textContent = sheetName;
     sheetElement.addEventListener('click', function () {
-        console.log(sheetNamesOrigin[sheetNames.indexOf(sheetName)]);
         drawTable(sheetNamesOrigin[sheetNames.indexOf(sheetName)]);
     })
     return sheetElement;
