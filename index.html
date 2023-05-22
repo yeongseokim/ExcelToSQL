@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./index.css">
+    <link rel="stylesheet" href="./excelView.css">
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+    <script src="./excel.js"></script>
+    <script src="./iconControl.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.15.5/xlsx.full.min.js"></script>
+    <title>Excel to SQL</title>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Excel To SQL</h1>
+        </header>
+
+        <main>
+            <div id="excelContainer" class="item excel">
+                <button id="excelButton" class="toggleButton excel">
+                    <i class="fi fi-rr-angle-small-right"></i>
+                    <span>Excel</span>
+                </button>
+                <div id="excelBehind" class="behindable excel">
+                    <div id="excelleft">
+                        <form>
+                            <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="readExcel()" />
+                        </form>
+                        <ul>
+                            <li>Doctor</li>
+                            <li>Nurse</li>
+                            <li>Patient</li>
+                        </ul>
+                    </div>
+                    <table id="excelTable"></table>
+                </div>
+            </div>
+
+            <div id="sheetsContainer" class="item">
+                <button id="sheetButton" class="toggleButton">
+                    <i class="fi fi-rr-angle-small-right"></i>
+                    <span>Sheet1</span>
+                </button>
+                <button id="sheetButton" class="toggleButton">
+                    <i class="fi fi-rr-angle-small-right"></i>
+                    <span>Sheet2</span>
+                </button>
+                <button id="sheetButton" class="toggleButton">
+                    <i class="fi fi-rr-angle-small-right"></i>
+                    <span>Sheet3</span>
+                </button>
+            </div>
+
+            <div id="sqlContainer" class="item">
+
+            </div>
+        </main>
+
+        <footer>
+            <span>
+                @yeongseokim
+            </span>
+            <span>
+                yeongseokim.dev@gmail.com
+            </span>
+        </footer>
+    </div>
+</body>
+
+</html>
