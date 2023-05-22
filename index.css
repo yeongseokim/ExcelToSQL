@@ -77,9 +77,10 @@ main {
 }
 
 #sheetsContainer {
-    background-color: green;
+    background-color: var(--gray-main);
     border-radius: 5px;
     grid-column: 1/3;
+    min-width: 320px;
 }
 
 #sqlContainer {
@@ -121,4 +122,8 @@ button:hover {
 
 #excelButton {
     width: 100%;
+}
+
+.hidable {
+    transition: opacity 0.3s ease-in-out;
 }

@@ -5,3 +5,28 @@
 .sheetButton span {
     margin-left: 10px;
 }
+
+.attributeList:hover {
+    background: var(--gray-light0);
+    border-bottom: var(--gray-middle) 1px solid;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.attributeList {
+    padding: 5px;
+    padding-left: 10px;
+}
+
+.attributeList td {
+    padding: 3px 0px;
+    padding-left: 10px;
+}
+
+select {
+    max-width: auto;
+    padding: 2px;
+}
+
+.attributeBox {
+    padding: 10px;
+}
