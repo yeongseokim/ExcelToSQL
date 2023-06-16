@@ -1,6 +1,7 @@
 /* Global State */
 let excelState = {};
 let sheetNamesState = [];
+let attributeState = {};
 const DATATYPE = ['INT', 'BIGINT', 'CHAR', 'VARCHAR', "DATE", "TIME", "DATETIME", "TIMESTAMP"];
 
 /* File */
@@ -16,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const workBook = XLSX.read(data, { type: 'binary' });
             makeExcelObject(workBook, workBook.SheetNames);
             makeArray(workBook.SheetNames);
+            makeAttributeObject();
             drawSheetNames();
             drawTable(sheetNamesState[0]); //Default로 첫 번째 시트를 열음
             determineSQLContainerHeight(100);
@@ -33,6 +35,30 @@ function makeExcelObject(workBook, sheetNames) {
 
 function makeArray(sheetNames) {
     sheetNamesState = [...sheetNames];
+}
+
+function makeAttributeObject() {
+    const tableNames = Object.keys(excelState);
+    for (const table of tableNames) {
+        attributeState[table] = {};
+        const firstAttriObj = excelState[table][0];
+        const attributes = Object.keys(firstAttriObj);
+        for (const attribute of attributes) {
+            attributeState[table][attribute] = {};
+            const data = firstAttriObj[attribute];
+            attributeState[table][attribute].dataType = identifyDataType(data);
+            attributeState[table][attribute].maxLength = data.toString().length;
+            attributeState[table][attribute].pk = false;
+            attributeState[table][attribute].fk = false;
+        }
+    }
+    console.log(attributeState);
+}
+
+function identifyDataType(data) {
+    if (typeof data === 'number' && !isNaN(data)) return "INT";
+    if (data === "") return "NULL";
+    return "CHAR"
 }
 
 function drawTable(sheetName) {
@@ -232,14 +258,6 @@ function editDataType(e) {
         // editSheetNamesState(e.target.id, editedName);
         // e.target.id = editName;
     }
-}
-
-function identifyDataType(sheetName, attributeName) {
-    const targetTableFirstRow = excelState[sheetName][0];
-    //console.log(targetTableFirstRow);
-    //console.log(`<${attributeName}> ${targetTableFirstRow[attributeName].v}`);
-    //sheetName(DEPARTMENT) 파라미터와 key(deptno)로 첫 번째 엘리먼트가 1. DATETIME인지, DATE인지, TIME인지, INT인지 결정 그 외에는 다 CHAR or VARCHAR
-    //editable 속성을 가진 클래스 이름 만들어서 hover이벤트 주기
 }
 
 function constraintsHandler(e) {
