@@ -112,7 +112,6 @@ function createExcelContainerSheetElement(sheetName) {
     sheetSpan.id = sheetName;
     sheetSpan.contentEditable = true;
     sheetSpan.addEventListener("keypress", editName);
-    sheetSpan.addEventListener("blur", editName);
 
     sheetElement.appendChild(sheetSpan);
 
@@ -136,7 +135,6 @@ function createSheetContainerSheetButton(sheetName) {
     span.id = sheetName;
     span.contentEditable = true;
     span.addEventListener("keypress", editName);
-    span.addEventListener("blur", editName);
 
     sheetButton.appendChild(i);
     sheetButton.appendChild(span);

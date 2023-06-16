@@ -1,5 +1,5 @@
 function drawSQLScript() {
-    console.log("[실행]")
+    console.log("[실행]");
     const sqlContainer = document.getElementById("sqlContainer");
     sqlContainer.innerHTML = "";
 
