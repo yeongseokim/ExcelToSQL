@@ -15,13 +15,17 @@ document.addEventListener('DOMContentLoaded', function () {
         reader.onload = function (e) {
             const data = reader.result;
             const workBook = XLSX.read(data, { type: 'binary' });
+
             makeExcelObject(workBook, workBook.SheetNames);
             makeArray(workBook.SheetNames);
             makeAttributeObject();
+
             drawSheetNames();
             drawTable(sheetNamesState[0]); //Default로 첫 번째 시트를 열음
             determineSQLContainerHeight(100);
             drawSQLScript();
+
+            searchMaxLength();
         };
         reader.readAsBinaryString(file.files[0]);
     });
@@ -52,12 +56,28 @@ function makeAttributeObject() {
             attributeState[table][attribute].fk = false;
         }
     }
+    console.log(attributeState);
 }
 
 function identifyDataType(data) {
     if (typeof data === 'number' && !isNaN(data)) return "INT";
     if (data === "") return "NULL";
     return "CHAR"
+}
+
+function searchMaxLength() {
+    const tableNames = Object.keys(attributeState);
+    for (const table of tableNames) {
+        const targetTable = excelState[table];
+        const attributes = Object.keys(attributeState[table]);
+        for (const attribute of attributes) {
+            for (let i = 0; i < targetTable.length; i++) {
+                const currentMaxLength = attributeState[table][attribute].maxLength;
+                const targetData = targetTable[i][attribute].toString().length;
+                attributeState[table][attribute].maxLength = Math.max(currentMaxLength, targetData);
+            }
+        }
+    }
 }
 
 function drawTable(sheetName) {
