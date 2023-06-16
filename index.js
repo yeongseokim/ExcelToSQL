@@ -52,7 +52,6 @@ function makeAttributeObject() {
             attributeState[table][attribute].fk = false;
         }
     }
-    console.log(attributeState);
 }
 
 function identifyDataType(data) {
@@ -174,6 +173,7 @@ function editName(e) {
         document.activeElement.blur();
         const editedName = e.target.innerText;
         editExcelState(e.target.id, editedName);
+        editAttributeState(e.target.id, editedName);
         editSheetNamesState(e.target.id, editedName);
         e.target.id = editedName;
     }
@@ -183,15 +183,18 @@ function editName(e) {
 function editSheetNamesState(preName, newName) {
     const index = sheetNamesState.indexOf(preName);
     sheetNamesState[index] = newName;
-    console.log(sheetNamesState);
     drawSheetNames();
 }
 
 function editExcelState(preName, newName) {
-    console.log(preName, newName);
     excelState[newName] = { ...excelState[preName] };
     delete excelState[preName];
-    console.log(excelState);
+}
+
+function editAttributeState(preName, newName) {
+    attributeState[newName] = { ...attributeState[preName] };
+    delete attributeState[preName];
+    console.log(attributeState);
 }
 
 function createSheetContainerAttributeList(sheetName) {
