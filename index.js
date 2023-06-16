@@ -92,7 +92,7 @@ function drawPKFKDescription() {
     pkspan.innerText = "PK:PrimaryKey";
     pkspan.id = "PKDesc";
     const fkspan = document.createElement("span");
-    fkspan.innerText = "FK:ForiegnKey";
+    fkspan.innerText = "FK:ForeignKey";
     fkspan.id = "FKDesc";
 
     div.appendChild(pkspan);
