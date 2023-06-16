@@ -1,29 +1,41 @@
-let sheetNames = [];
-let sheetState = [];
-let sheetNamesOrigin = [];
-let workBook;
+let sheetNamesState = [];
+let excelState = {};
 
 const DATATYPE = ['INT', 'CHAR(10)', 'CHAR(20)', 'VARCHAR(512)', "DATE"];
 
 document.addEventListener('DOMContentLoaded', function () {
-    const excelFileInput = document.getElementById('file');
+    const excelFileInput = document.getElementById('file'); //html 엘리먼트
 
     excelFileInput.addEventListener('change', function (e) {
-        const file = e.target;
+        const file = e.target; //파일을 받음
         const reader = new FileReader(); //파일 리더
 
         reader.onload = function (e) {
             const data = reader.result;
-            workBook = XLSX.read(data, { type: 'binary' });
-            sheetNamesOrigin = [...workBook.SheetNames];
+            const workBook = XLSX.read(data, { type: 'binary' });
+            makeObject(workBook, workBook.SheetNames);
+            makeArray(workBook.SheetNames);
             sheetNameHandler(workBook.SheetNames);
         };
         reader.readAsBinaryString(file.files[0]);
     });
 });
 
+function makeObject(workBook, sheetNames) {
+    sheetNames.forEach(function (sheetName) {
+        excelState[sheetName] = XLSX.utils.sheet_to_json(workBook.Sheets[sheetName]);
+    });
+    console.log(excelState);
+}
+
+function makeArray(sheetNames) {
+    sheetNamesState = [...sheetNames];
+    console.log(sheetNamesState);
+}
+
 function drawTable(sheetName) {
     let jsonData = XLSX.utils.sheet_to_json(workBook.Sheets[sheetName]);
+
     const excelTable = document.getElementById('excelTable');
     excelTable.innerHTML = '';
 
@@ -51,7 +63,7 @@ function drawTable(sheetName) {
 }
 
 function createAttributeList(sheetName) {
-    const originalName = sheetNamesOrigin[sheetNames.indexOf(sheetName)]
+    const originalName = sheetNamesState[sheetNames.indexOf(sheetName)]
     // const buttonElement = document.getElementById(sheetName).parentElement;
 
     let jsonData = XLSX.utils.sheet_to_json(workBook.Sheets[originalName]);
@@ -116,10 +128,6 @@ function createDropdown() {
     return select;
 }
 
-function dropdownHandler() {
-
-}
-
 function sheetNameHandler(sheetname) {
     sheetNames = sheetname;
     const excelSheetList = document.getElementById('excelSheetList');
@@ -143,7 +151,7 @@ function createSheetElement(sheetName) {
     sheetElement.classList.add("sheetListElement");
     sheetElement.textContent = sheetName;
     sheetElement.addEventListener('click', function () {
-        drawTable(sheetNamesOrigin[sheetNames.indexOf(sheetName)]);
+        drawTable(sheetNamesState[sheetNames.indexOf(sheetName)]);
     })
     return sheetElement;
 }

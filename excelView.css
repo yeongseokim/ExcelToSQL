@@ -77,3 +77,31 @@
     padding: 10px;
     padding-left: 20px;
 }
+
+.constraintsButton {
+    padding: 4px;
+    border: 1px solid var(--background-dark);
+}
+
+.constraintsButton:hover {
+    background-color: var(--gray-light1);
+}
+
+.constraintsButton.selectedButton {
+    background-color: var(--green-middle);
+    color: #ebebeb;
+}
+
+#PKFKDesc {
+    display: grid;
+    font-size: 0.7rem;
+}
+
+.toggleButton.sheetButton:first-of-type {
+    display: flex;
+}
+
+.toggleButton.sheetButton:first-of-type>#PKFKDesc {
+    flex-grow: 1;
+    text-align: right;
+}
