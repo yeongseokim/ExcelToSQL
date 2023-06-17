@@ -5,9 +5,8 @@ function drawSQLScript() {
     const div = document.createElement("div");
     div.id = "sqlTextContainer";
 
-    const tableNames = Object.keys(attributeState);
     for (const tableName of sheetNamesState) {
-        console.log(`===================${tableName}===================`)
+        //console.log(`===================${tableName}===================`)
         div.appendChild(createCreateStatementStart(tableName));
         const table = attributeState[tableName];
         const attributeList = Object.keys(table);
@@ -15,21 +14,24 @@ function drawSQLScript() {
         let fkObjList = [];
         for (const attribute of attributeList) {
             const attributeName = attribute;
-            const attributeDataType = table[attribute].dataType;
+            const attributeDataType = determineDataTypeView(table[attribute]);
             const isPK = table[attribute].pk;
             const isFK = table[attribute].fk;
             div.appendChild(createCreateStatementAttribute(attributeName, attributeDataType));
             if (isPK) pkNameList.push(attribute);
-            if (isFK) {
+            if (isFK && isFK !== true) {
                 const fkobj = {};
                 fkobj["referencingAttribute"] = attributeName;
-                fkobj["referencedRelation"] = "";
-                fkobj["referencedAttribute"] = "";
+                const [referencedRelation, referencedAttribute] = isFK.split('.');
+                fkobj["referencedRelation"] = referencedRelation;
+                fkobj["referencedAttribute"] = referencedAttribute;
                 fkObjList.push(fkobj);
             }
         }
         if (pkNameList.length > 0) div.appendChild(createCreateStatementPrimaryKey(pkNameList));
-        //if(fkObjList.length > 0) div.appendChild(fk관련);
+        for (const fkObj of fkObjList) {
+            div.appendChild(createCreateStatementForeignKey(fkObj))
+        }
         div.appendChild(createCreateStatementEnd());
     }
     sqlContainer.appendChild(div);
@@ -73,9 +75,9 @@ function createCreateStatementPrimaryKey(keyAttributeList) {
     return p;
 }
 
-function createCreateStatementForeignKey(referencingAttribute, referencedRelation, referencedAttribute) {
+function createCreateStatementForeignKey(fkobj) {
     const p = generateStatementElement();
-    p.innerText = `\t\tFOREIGN KEY(${referencingAttribute.toUpperCase()}) REFERENCES ${referencedRelation.toUpperCase()}(${referencedAttribute.toUpperCase()}),`;
+    p.innerText = `\t\tFOREIGN KEY(${fkobj.referencingAttribute.toUpperCase()}) REFERENCES ${fkobj.referencedRelation.toUpperCase()}(${fkobj.referencedAttribute.toUpperCase()}),`;
     return p;
 }
 
