@@ -2,6 +2,7 @@
 let excelState = {};
 let sheetNamesState = [];
 let attributeState = {};
+let tableDependencyState = {};
 const DATATYPE_UNNEED_LENGTH = ['INT', 'DATE', 'BOOLEAN', 'TIME', 'DATETIME', 'TIMESTAMP'];
 const DATATYPE_CAN_HAVE_LENGTH = ['BIGINT', 'TINYINT', 'SMALLINT', 'MEDIUMINT', 'FLOAT', 'DOUBLE'];
 const DATATYPE_NEED_LENGTH = ['CHAR', 'VARCHAR', 'BLOB', 'TEXT', 'ENUM', 'DECIMAL'];
@@ -59,6 +60,7 @@ function makeAttributeObject() {
     const tableNames = Object.keys(excelState);
     for (const table of tableNames) {
         attributeState[table] = {};
+        tableDependencyState[table] = [];
         const firstAttriObj = excelState[table][0];
         const attributes = Object.keys(firstAttriObj);
         for (const attribute of attributes) {
@@ -207,12 +209,15 @@ function editName(e) {
     if (window.event.keyCode == 13) {
         e.preventDefault();
         document.activeElement.blur();
+        const preName = e.target.id;
         const editedName = e.target.innerText;
-        editExcelState(e.target.id, editedName);
-        editAttributeState(e.target.id, editedName);
-        editSheetNamesState(e.target.id, editedName);
+        editExcelState(preName, editedName);
+        editAttributeState(preName, editedName);
+        editSheetNamesState(preName, editedName);
+        editTableDependencyState(preName, editedName);
         e.target.id = editedName;
 
+        drawSheetNames();
         drawSQLScript();
         drawReferecingSelect();
     }
@@ -221,7 +226,6 @@ function editName(e) {
 function editSheetNamesState(preName, newName) {
     const index = sheetNamesState.indexOf(preName);
     sheetNamesState[index] = newName;
-    drawSheetNames();
 }
 
 function editExcelState(preName, newName) {
@@ -232,6 +236,35 @@ function editExcelState(preName, newName) {
 function editAttributeState(preName, newName) {
     attributeState[newName] = { ...attributeState[preName] };
     delete attributeState[preName];
+}
+
+function editTableDependencyState(preName, newName) {
+    const attrs = Object.keys(attributeState[newName]);
+    for (const attr of attrs) {
+        const fkValue = attributeState[newName][attr].fk;
+        if (fkValue && fkValue !== true) {
+            const [tableName, attributeName] = fkValue.split('.');
+            const newArr = tableDependencyState[tableName].map(item => (item === preName ? newName : item));
+            tableDependencyState[tableName] = [...newArr];
+        }
+    }
+    for (const targetTable of tableDependencyState[preName]) {
+        const attributes = Object.keys(attributeState[targetTable]);
+        for (const attribute of attributes) {
+            const fkValue = attributeState[targetTable][attribute].fk;
+            if (fkValue && fkValue !== true) {
+                const [tableName, attributeName] = fkValue.split('.');
+                if (tableName === preName) {
+                    attributeState[targetTable][attribute].fk = `${newName}.${attributeName}`;
+                }
+            }
+        }
+    }
+    tableDependencyState[newName] = [...tableDependencyState[preName]];
+    delete tableDependencyState[preName];
+
+    console.log(attributeState);
+    console.log(tableDependencyState);
 }
 
 function createSheetContainerAttributeList(sheetName) {
@@ -348,6 +381,7 @@ function constraintsHandler(e) {
     const [tableName, attributeName, targetKey] = e.target.id.split("-");
     if (targetClassList.contains(COLOR_CLASS_NAME)) {
         targetClassList.remove(COLOR_CLASS_NAME);
+        deleteDependency(tableName, attributeName, targetKey);
         attributeState[tableName][attributeName][targetKey] = false;
     }
     else {
@@ -355,6 +389,17 @@ function constraintsHandler(e) {
         attributeState[tableName][attributeName][targetKey] = true;
     }
     drawSQLScript();
+}
+
+function deleteDependency(tableName, attributeName, targetKey) {
+    if (targetKey === 'pk') return;
+    if (attributeState[tableName][attributeName][targetKey] === true) return;
+
+    const [refTable,] = attributeState[tableName][attributeName][targetKey].split('.');
+    const index = tableDependencyState[refTable].indexOf(tableName);
+    if (index > -1) {
+        tableDependencyState[refTable].splice(index, 1);
+    }
 }
 
 function fkHandler(e) {
@@ -427,6 +472,9 @@ function createDropdown() {
 
 function setFK(e) {
     const selectedOption = e.target.value;
+    const [referencedTable,] = selectedOption.split('.');
     const [table, attribute,] = e.target.parentElement.id.split("-");
     attributeState[table][attribute].fk = selectedOption;
+    tableDependencyState[referencedTable].push(table);
+    drawSQLScript();
 }
