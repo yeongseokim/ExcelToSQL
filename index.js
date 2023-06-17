@@ -2,7 +2,17 @@
 let excelState = {};
 let sheetNamesState = [];
 let attributeState = {};
-const DATATYPE_UNNEED_LENGTH = ['INT', "DATE", "TIME", "DATETIME", "TIMESTAMP"];
+const DATATYPE_UNNEED_LENGTH = ['INT', 'DATE', 'BOOLEAN', 'TIME', 'DATETIME', 'TIMESTAMP'];
+const DATATYPE_CAN_HAVE_LENGTH = ['BIGINT', 'TINYINT', 'SMALLINT', 'MEDIUMINT', 'FLOAT', 'DOUBLE'];
+const DATATYPE_NEED_LENGTH = ['CHAR', 'VARCHAR', 'BLOB', 'TEXT', 'ENUM', 'DECIMAL'];
+
+const CORRECT_INPUT_FORMAT = /^([a-zA-Z]+)\((\d+)\)$/;
+const ERROR_UNVALID_FORMAT_MESSAGE = `유효하지 않은 입력 형식입니다.\n데이터의 길이를 명시해야하는 데이터타입은 Datatype(Length)의 형식으로\nDatatype은 string, Length는 숫자로 입력해주세요.`;
+const ERROR_UNVALID_DATATYPE_MESSAGE = `유효하지 않은 데이터타입입니다.\n입력할 수 있는 데이터는 다음과 같습니다.\n
+1. 숫자 데이터 타입: TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT, FLOAT, DOUBLE, DECIMAL
+2. 문자열 데이터 타입: CHAR, VARCHAR, TEXT, ENUM
+3. 날짜 및 시간 데이터 타입: DATE, TIME, DATETIME, TIMESTAMP
+4. 기타 데이터 타입: BOOLEAN, BLOB`;
 
 /* File */
 document.addEventListener('DOMContentLoaded', function () {
@@ -53,8 +63,12 @@ function makeAttributeObject() {
             attributeState[table][attribute].dataType = identifyDataType(data);
             attributeState[table][attribute].pk = false;
             attributeState[table][attribute].fk = false;
+
+            if (DATATYPE_UNNEED_LENGTH.includes(attributeState[table][attribute].dataType) || DATATYPE_CAN_HAVE_LENGTH.includes(attributeState[table][attribute].dataType)) attributeState[table][attribute].isDataTypeSpecified = false;
+            else attributeState[table][attribute].isDataTypeSpecified = true;
         }
     }
+    console.log(attributeState);
 }
 
 function identifyDataType(data) {
@@ -73,6 +87,7 @@ function searchMaxLength() {
                 const targetData = targetTable[i][attribute].toString().length;
                 currentMaxLength = Math.max(currentMaxLength, targetData);
             }
+            if (currentMaxLength >= 10 && attributeState[table][attribute].dataType === "INT") attributeState[table][attribute].dataType = "BIGINT";
             attributeState[table][attribute].maxLength = currentMaxLength;
         }
     }
@@ -276,7 +291,7 @@ function determineDataTypeView(targetObj) {
     const dataType = targetObj.dataType;
 
     if (DATATYPE_UNNEED_LENGTH.includes(dataType)) return `${dataType}`;
-
+    if (DATATYPE_CAN_HAVE_LENGTH.includes(dataType) && !targetObj.isDataTypeSpecified) return `${dataType}`
     return `${dataType}(${targetObj.maxLength})`;
 }
 
@@ -284,9 +299,40 @@ function editDataType(e) {
     if (window.event.keyCode == 13) {
         e.preventDefault();
         document.activeElement.blur();
-        const editedDataType = e.target.innerText;
-        // editSheetNamesState(e.target.id, editedName);
-        // e.target.id = editName;
+        const editedDataType = e.target.innerText.toUpperCase();
+        const [tableName, attributeName,] = e.target.id.split("-");
+
+        if (DATATYPE_UNNEED_LENGTH.includes(editedDataType) || DATATYPE_CAN_HAVE_LENGTH.includes(editedDataType)) {
+            attributeState[tableName][attributeName].dataType = editedDataType;
+            attributeState[tableName][attributeName].isDataTypeSpecified = false;
+
+            e.target.innerText = determineDataTypeView(attributeState[tableName][attributeName]);
+            drawSQLScript();
+            return;
+        }
+
+        if (!CORRECT_INPUT_FORMAT.test(editedDataType)) {
+            alert(ERROR_UNVALID_FORMAT_MESSAGE);
+            e.target.innerText = determineDataTypeView(attributeState[tableName][attributeName]);
+            return;
+        }
+
+        const [, datatype, length] = editedDataType.match(CORRECT_INPUT_FORMAT);
+        if (!DATATYPE_UNNEED_LENGTH.includes(datatype) && !DATATYPE_NEED_LENGTH.includes(datatype) && !DATATYPE_CAN_HAVE_LENGTH.includes(datatype)) {
+            alert(ERROR_UNVALID_DATATYPE_MESSAGE);
+            e.target.innerText = determineDataTypeView(attributeState[tableName][attributeName]);
+            return;
+        }
+
+        if (DATATYPE_CAN_HAVE_LENGTH.includes(datatype)) {
+            attributeState[tableName][attributeName].isDataTypeSpecified = true;
+        }
+
+        attributeState[tableName][attributeName].dataType = datatype;
+        attributeState[tableName][attributeName].maxLength = length;
+
+        e.target.innerText = determineDataTypeView(attributeState[tableName][attributeName]);
+        drawSQLScript();
     }
 }
 
