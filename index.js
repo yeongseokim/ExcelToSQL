@@ -358,17 +358,18 @@ function constraintsHandler(e) {
 }
 
 function fkHandler(e) {
-    const targetParent = e.target.parentElement.parentElement;
     const [tableName, attributeName, attributeKey] = e.target.id.split("-");
-    const idName = `${tableName}-${attributeName}-ref`;
+    const tr = document.getElementById(`${tableName}-${attributeName}`);
 
-    const deleteElement = document.getElementById(idName);
-    if (deleteElement) {
-        targetParent.removeChild(deleteElement);
+    if (attributeState[tableName][attributeName].fk) {
+        const td = createDropdownTd(`${tableName}-${attributeName}-ref`);
+        tr.appendChild(td);
         return;
+    } else {
+        console.log(tr);
+        const td = document.getElementById(`${tableName}-${attributeName}-ref`);
+        tr.removeChild(td);
     }
-
-    drawReferecingSelect();
 }
 
 function drawReferecingSelect() {
@@ -377,10 +378,13 @@ function drawReferecingSelect() {
         const attributeList = Object.keys(table);
         for (const attribute of attributeList) {
             const fkState = table[attribute].fk;
+            console.log(fkState);
+            const tdId = `${tableName}-${attribute}-ref`;
             if (!fkState) continue;
+            if (document.getElementById(tdId)) continue;
 
             const tr = document.getElementById(`${tableName}-${attribute}`)
-            const td = createDropdownTd(`${tableName}-${attribute}-ref`);
+            const td = createDropdownTd(tdId);
             tr.appendChild(td);
 
             if (fkState !== true) {
@@ -427,5 +431,4 @@ function setFK(e) {
     const selectedOption = e.target.value;
     const [table, attribute,] = e.target.parentElement.id.split("-");
     attributeState[table][attribute].fk = selectedOption;
-    console.log(attributeState[table][attribute].fk);
 }
