@@ -366,7 +366,6 @@ function fkHandler(e) {
         tr.appendChild(td);
         return;
     } else {
-        console.log(tr);
         const td = document.getElementById(`${tableName}-${attributeName}-ref`);
         tr.removeChild(td);
     }
@@ -378,7 +377,6 @@ function drawReferecingSelect() {
         const attributeList = Object.keys(table);
         for (const attribute of attributeList) {
             const fkState = table[attribute].fk;
-            console.log(fkState);
             const tdId = `${tableName}-${attribute}-ref`;
             if (!fkState) continue;
             if (document.getElementById(tdId)) continue;
