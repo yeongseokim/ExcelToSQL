@@ -30,3 +30,13 @@ select {
 .attributeBox {
     padding: 10px;
 }
+
+.dropdown {
+    max-width: 120px;
+}
+
+@media (max-width:1270px) {
+    .dropdown {
+        max-width: 40%;
+    }
+}

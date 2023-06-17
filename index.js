@@ -36,9 +36,13 @@ document.addEventListener('DOMContentLoaded', function () {
             determineSQLContainerHeight(100);
             drawSQLScript();
 
+            console.log(excelState);
+            console.log(sheetNamesState);
+            console.log(attributeState);
         };
         reader.readAsBinaryString(file.files[0]);
     });
+
 });
 
 function makeExcelObject(workBook, sheetNames) {
@@ -68,7 +72,6 @@ function makeAttributeObject() {
             else attributeState[table][attribute].isDataTypeSpecified = true;
         }
     }
-    console.log(attributeState);
 }
 
 function identifyDataType(data) {
@@ -209,8 +212,10 @@ function editName(e) {
         editAttributeState(e.target.id, editedName);
         editSheetNamesState(e.target.id, editedName);
         e.target.id = editedName;
+
+        drawSQLScript();
+        drawReferecingSelect();
     }
-    drawSQLScript();
 }
 
 function editSheetNamesState(preName, newName) {
@@ -227,7 +232,6 @@ function editExcelState(preName, newName) {
 function editAttributeState(preName, newName) {
     attributeState[newName] = { ...attributeState[preName] };
     delete attributeState[preName];
-    console.log(attributeState);
 }
 
 function createSheetContainerAttributeList(sheetName) {
@@ -247,6 +251,7 @@ function createSheetContainerAttributeList(sheetName) {
     for (const attribute of attributes) {
         const targetObject = targetTable[attribute];
         const attributeList = document.createElement("tr"); //행 생성
+        attributeList.id = `${sheetName}-${attribute}`
 
         const tdName = document.createElement("td"); //이름 열에는 키
         tdName.innerText = attribute;
@@ -273,7 +278,8 @@ function createSheetContainerAttributeList(sheetName) {
         isForeignKey.innerText = "FK";
         isForeignKey.classList.add("constraintsButton")
         if (targetObject.fk) isForeignKey.classList.add("selectedButton");
-        isForeignKey.addEventListener("click", constraintsHandler)
+        isForeignKey.addEventListener("click", constraintsHandler);
+        isForeignKey.addEventListener("click", fkHandler);
         constraintsForeignKey.appendChild(isForeignKey);
 
         attributeList.classList.add("attributeList");
@@ -349,4 +355,77 @@ function constraintsHandler(e) {
         attributeState[tableName][attributeName][targetKey] = true;
     }
     drawSQLScript();
+}
+
+function fkHandler(e) {
+    const targetParent = e.target.parentElement.parentElement;
+    const [tableName, attributeName, attributeKey] = e.target.id.split("-");
+    const idName = `${tableName}-${attributeName}-ref`;
+
+    const deleteElement = document.getElementById(idName);
+    if (deleteElement) {
+        targetParent.removeChild(deleteElement);
+        return;
+    }
+
+    drawReferecingSelect();
+}
+
+function drawReferecingSelect() {
+    for (const tableName of sheetNamesState) {
+        const table = attributeState[tableName]
+        const attributeList = Object.keys(table);
+        for (const attribute of attributeList) {
+            const fkState = table[attribute].fk;
+            if (!fkState) continue;
+
+            const tr = document.getElementById(`${tableName}-${attribute}`)
+            const td = createDropdownTd(`${tableName}-${attribute}-ref`);
+            tr.appendChild(td);
+
+            if (fkState !== true) {
+                const option = tr.querySelector(`option[value="${fkState}"]`);
+                option.selected = true;
+            }
+        }
+    }
+
+}
+
+function createDropdownTd(idName) {
+    const td = document.createElement("td");
+    td.id = idName;
+    const select = createDropdown();
+    td.appendChild(select);
+    return td;
+}
+
+function createDropdown() {
+    const select = document.createElement("select");
+    select.classList.add("dropdown");
+    const optionDefault = document.createElement("option");
+    optionDefault.innerText = "table.attribute";
+    select.appendChild(optionDefault);
+
+    for (const table of sheetNamesState) {
+        const attributeList = Object.keys(attributeState[table])
+        for (const attribute of attributeList) {
+            const option = document.createElement("option");
+            const text = `${table}.${attribute}`;
+            option.value = text;
+            option.innerText = text;
+            select.appendChild(option);
+        }
+    }
+
+    select.addEventListener('change', setFK);
+
+    return select;
+}
+
+function setFK(e) {
+    const selectedOption = e.target.value;
+    const [table, attribute,] = e.target.parentElement.id.split("-");
+    attributeState[table][attribute].fk = selectedOption;
+    console.log(attributeState[table][attribute].fk);
 }
