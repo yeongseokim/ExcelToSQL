@@ -1,34 +1,37 @@
 function drawSQLScript() {
-    console.log("[실행]");
     const sqlContainer = document.getElementById("sqlContainer");
     sqlContainer.innerHTML = "";
 
     const div = document.createElement("div");
     div.id = "sqlTextContainer";
 
-    const toggleButtonList = document.getElementsByClassName("toggleButton sheetButton");
-    const attributeBox = document.getElementsByClassName("attributeBox");
-
-    for (let i = 0; i < toggleButtonList.length; i++) {
-        const buttonName = toggleButtonList[i].children[1].innerText;
-        const attributeList = attributeBox[i].children;
-        console.log(`=============Index: ${i} Name: ${buttonName}, =============`);
-        div.appendChild(createCreateStatementStart(buttonName));
-
-        for (const tr of attributeList) {
-            const td = tr.children;
-            const attributeName = td[0].innerText;
-            const attributeDataType = td[1].innerText;
-            const attributePK = td[2].children[0].classList.contains("selectedButton");
-            const attributeFK = td[3].children[0].classList.contains("selectedButton");
-
+    const tableNames = Object.keys(attributeState);
+    for (const tableName of sheetNamesState) {
+        console.log(`===================${tableName}===================`)
+        div.appendChild(createCreateStatementStart(tableName));
+        const table = attributeState[tableName];
+        const attributeList = Object.keys(table);
+        let pkNameList = [];
+        let fkObjList = [];
+        for (const attribute of attributeList) {
+            const attributeName = attribute;
+            const attributeDataType = table[attribute].dataType;
+            const isPK = table[attribute].pk;
+            const isFK = table[attribute].fk;
             div.appendChild(createCreateStatementAttribute(attributeName, attributeDataType));
-
-            console.log(`Value: ${attributeName}, ${attributeDataType}, ${attributePK}, ${attributeFK}`);
+            if (isPK) pkNameList.push(attribute);
+            if (isFK) {
+                const fkobj = {};
+                fkobj["referencingAttribute"] = attributeName;
+                fkobj["referencedRelation"] = "";
+                fkobj["referencedAttribute"] = "";
+                fkObjList.push(fkobj);
+            }
         }
+        if (pkNameList.length > 0) div.appendChild(createCreateStatementPrimaryKey(pkNameList));
+        //if(fkObjList.length > 0) div.appendChild(fk관련);
         div.appendChild(createCreateStatementEnd());
     }
-
     sqlContainer.appendChild(div);
 }
 

@@ -2,7 +2,7 @@
 let excelState = {};
 let sheetNamesState = [];
 let attributeState = {};
-const DATATYPE = ['INT', 'BIGINT', 'CHAR', 'VARCHAR', "DATE", "TIME", "DATETIME", "TIMESTAMP"];
+const DATATYPE_UNNEED_LENGTH = ['INT', "DATE", "TIME", "DATETIME", "TIMESTAMP"];
 
 /* File */
 document.addEventListener('DOMContentLoaded', function () {
@@ -19,13 +19,13 @@ document.addEventListener('DOMContentLoaded', function () {
             makeExcelObject(workBook, workBook.SheetNames);
             makeArray(workBook.SheetNames);
             makeAttributeObject();
+            searchMaxLength();
 
             drawSheetNames();
             drawTable(sheetNamesState[0]); //Default로 첫 번째 시트를 열음
             determineSQLContainerHeight(100);
             drawSQLScript();
 
-            searchMaxLength();
         };
         reader.readAsBinaryString(file.files[0]);
     });
@@ -51,12 +51,10 @@ function makeAttributeObject() {
             attributeState[table][attribute] = {};
             const data = firstAttriObj[attribute];
             attributeState[table][attribute].dataType = identifyDataType(data);
-            attributeState[table][attribute].maxLength = data.toString().length;
             attributeState[table][attribute].pk = false;
             attributeState[table][attribute].fk = false;
         }
     }
-    console.log(attributeState);
 }
 
 function identifyDataType(data) {
@@ -70,11 +68,12 @@ function searchMaxLength() {
         const targetTable = excelState[table];
         const attributes = Object.keys(attributeState[table]);
         for (const attribute of attributes) {
+            let currentMaxLength = 0;
             for (let i = 0; i < targetTable.length; i++) {
-                const currentMaxLength = attributeState[table][attribute].maxLength;
                 const targetData = targetTable[i][attribute].toString().length;
-                attributeState[table][attribute].maxLength = Math.max(currentMaxLength, targetData);
+                currentMaxLength = Math.max(currentMaxLength, targetData);
             }
+            attributeState[table][attribute].maxLength = currentMaxLength;
         }
     }
 }
@@ -239,16 +238,17 @@ function createSheetContainerAttributeList(sheetName) {
         attributeList.appendChild(tdName);
 
         const tdDataType = document.createElement("td"); //데이터타입
+        tdDataType.id = `${sheetName}-${attribute}-dataType`;
         tdDataType.contentEditable = true;
-        tdDataType.innerText = targetObject.dataType;
+        tdDataType.innerText = determineDataTypeView(targetObject);
         tdDataType.addEventListener("keypress", editDataType);
 
         const constraintsPrimaryKey = document.createElement("td");
         const isPrimaryKey = document.createElement("button");
         isPrimaryKey.id = `${sheetName}-${attribute}-pk`;
         isPrimaryKey.innerText = "PK";
-        const pkClassName = determineKeyClassName(targetObject.pk);
-        isPrimaryKey.classList.add(pkClassName);
+        isPrimaryKey.classList.add("constraintsButton");
+        if (targetObject.pk) isPrimaryKey.classList.add("selectedButton");
         isPrimaryKey.addEventListener("click", constraintsHandler);
         constraintsPrimaryKey.appendChild(isPrimaryKey);
 
@@ -256,8 +256,8 @@ function createSheetContainerAttributeList(sheetName) {
         const isForeignKey = document.createElement("button");
         isForeignKey.id = `${sheetName}-${attribute}-fk`;
         isForeignKey.innerText = "FK";
-        const fkClassName = determineKeyClassName(targetObject.fk);
-        isForeignKey.classList.add(fkClassName)
+        isForeignKey.classList.add("constraintsButton")
+        if (targetObject.fk) isForeignKey.classList.add("selectedButton");
         isForeignKey.addEventListener("click", constraintsHandler)
         constraintsForeignKey.appendChild(isForeignKey);
 
@@ -272,8 +272,12 @@ function createSheetContainerAttributeList(sheetName) {
     return attributeBox
 }
 
-function determineKeyClassName(targetBool) {
-    return targetBool ? "constraintsButton selectedButton" : "constraintsButton";
+function determineDataTypeView(targetObj) {
+    const dataType = targetObj.dataType;
+
+    if (DATATYPE_UNNEED_LENGTH.includes(dataType)) return `${dataType}`;
+
+    return `${dataType}(${targetObj.maxLength})`;
 }
 
 function editDataType(e) {
@@ -298,5 +302,5 @@ function constraintsHandler(e) {
         targetClassList.add(COLOR_CLASS_NAME);
         attributeState[tableName][attributeName][targetKey] = true;
     }
-    console.log(attributeState);
+    drawSQLScript();
 }
