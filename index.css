@@ -46,11 +46,26 @@ header {
     background-color: var(--green-middle);
     padding: 10px 0px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    display: flex;
+    justify-content: space-between;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
 }
 
 h1 {
     margin: 0px 10px;
     color: #F8FCFA;
+}
+
+#exportGroup {
+    margin: 0px 10px;
+}
+
+#exportGroup button {
+    margin: 0px 5px;
 }
 
 footer {

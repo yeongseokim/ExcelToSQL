@@ -8,9 +8,11 @@
     <link rel="stylesheet" href="./index.css">
     <link rel="stylesheet" href="./excelView.css">
     <link rel="stylesheet" href="./sheetView.css">
+    <link rel="stylesheet" href="./sqlView.css">
     <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css'>
     <script src="./sql.js"></script>
     <script src="./index.js"></script>
+    <script src="./export.js"></script>
     <script src="./iconControl.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.15.5/xlsx.full.min.js"></script>
     <title>ExcellenToSQL</title>
@@ -19,9 +21,19 @@
 <body>
     <div class="container">
         <header>
-            <h1>ExcellenToSQL</h1>
-            <!-- <i class="fi fi-rr-download"></i> -->
-            <!-- <i class="fi fi-rr-refresh"></i> -->
+            <a href="/">
+                <h1>ExcellenToSQL</h1>
+            </a>
+            <div id="exportGroup">
+                <button onclick="downloadSQL()">
+                    <i class="fi fi-rr-download"></i>
+                    <span>DOWNLOAD</span>
+                </button>
+                <button onclick="copySQL()">
+                    <i class="fi fi-rr-copy-alt"></i>
+                    <span>COPY</span>
+                </button>
+            </div>
         </header>
 
         <main>
