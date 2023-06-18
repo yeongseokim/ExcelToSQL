@@ -3,16 +3,16 @@ let excelState = {};
 let sheetNamesState = [];
 let attributeState = {};
 let tableDependencyState = {};
-const DATATYPE_UNNEED_LENGTH = ['INT', 'DATE', 'BOOLEAN', 'TIME', 'DATETIME', 'TIMESTAMP'];
+const DATATYPE_UNNEED_LENGTH = ['INT', 'DATE', 'BOOLEAN', 'TIME', 'DATETIME', 'TIMESTAMP', 'YEAR'];
 const DATATYPE_CAN_HAVE_LENGTH = ['BIGINT', 'TINYINT', 'SMALLINT', 'MEDIUMINT', 'FLOAT', 'DOUBLE'];
-const DATATYPE_NEED_LENGTH = ['CHAR', 'VARCHAR', 'BLOB', 'TEXT', 'ENUM', 'DECIMAL'];
+const DATATYPE_NEED_LENGTH = ['CHAR', 'VARCHAR', 'BLOB', 'TEXT', 'TINYTEXT', 'LONGTEXT', 'MEDIUMTEXT', 'ENUM', 'DECIMAL'];
 
 const CORRECT_INPUT_FORMAT = /^([a-zA-Z]+)\((\d+)\)$/;
 const ERROR_UNVALID_FORMAT_MESSAGE = `유효하지 않은 입력 형식입니다.\n데이터의 길이를 명시해야하는 데이터타입은 Datatype(Length)의 형식으로\nDatatype은 string, Length는 숫자로 입력해주세요.`;
 const ERROR_UNVALID_DATATYPE_MESSAGE = `유효하지 않은 데이터타입입니다.\n입력할 수 있는 데이터는 다음과 같습니다.\n
 1. 숫자 데이터 타입: TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT, FLOAT, DOUBLE, DECIMAL
-2. 문자열 데이터 타입: CHAR, VARCHAR, TEXT, ENUM
-3. 날짜 및 시간 데이터 타입: DATE, TIME, DATETIME, TIMESTAMP
+2. 문자열 데이터 타입: CHAR, VARCHAR, TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT, ENUM
+3. 날짜 및 시간 데이터 타입: DATE, TIME, DATETIME, TIMESTAMP, YEAR
 4. 기타 데이터 타입: BOOLEAN, BLOB`;
 
 /* File */
