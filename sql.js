@@ -33,11 +33,13 @@ function drawSQLScript() {
             div.appendChild(createCreateStatementForeignKey(fkObj))
         }
         div.appendChild(createCreateStatementEnd());
+        div.insertAdjacentHTML('beforeend', `<br>`);
 
         const dataTable = excelState[tableName];
         for (const tuple of dataTable) {
             div.appendChild(createInsertStatement(tableName, tuple));
         }
+        div.insertAdjacentHTML('beforeend', `<br>`);
     }
     sqlContainer.appendChild(div);
 }
@@ -60,17 +62,17 @@ function createCreateStatementEnd() {
 
 function createCreateStatementAttribute(attributename, datatype) {
     const p = generateStatementElement();
-    p.innerText = `\t\t${attributename.toUpperCase()}\t${datatype},`;
+    p.innerText = `\t${attributename.toUpperCase()}\t${datatype},`;
     return p;
 }
 
 function createCreateStatementPrimaryKey(keyAttributeList) {
     const p = generateStatementElement();
     if (keyAttributeList.length == 1) {
-        p.innerText = `\t\tPRIMARY KEY(${keyAttributeList[0].toUpperCase()}),`
+        p.innerText = `\tPRIMARY KEY(${keyAttributeList[0].toUpperCase()}),`
     }
     else {
-        let statement = `\t\tPRIMARY KEY(`
+        let statement = `\tPRIMARY KEY(`
         for (let i = 0; i < keyAttributeList.length - 1; i++) {
             statement += keyAttributeList[i].toUpperCase() + ", ";
         }
@@ -82,7 +84,7 @@ function createCreateStatementPrimaryKey(keyAttributeList) {
 
 function createCreateStatementForeignKey(fkobj) {
     const p = generateStatementElement();
-    p.innerText = `\t\tFOREIGN KEY(${fkobj.referencingAttribute.toUpperCase()}) REFERENCES ${fkobj.referencedRelation.toUpperCase()}(${fkobj.referencedAttribute.toUpperCase()}),`;
+    p.innerText = `\tFOREIGN KEY(${fkobj.referencingAttribute.toUpperCase()}) REFERENCES ${fkobj.referencedRelation.toUpperCase()}(${fkobj.referencedAttribute.toUpperCase()}),`;
     return p;
 }
 
@@ -94,9 +96,10 @@ function createInsertStatement(tableName, valueObj) {
     for (const attr of attrs) {
         const dataType = attributeState[tableName][attr].dataType;
         let data = valueObj[attr];
-        if (dataType === "DATE") data = extractYYYYMMDD(data);
+        if (dataType === "DATE" && countDigits(data.toString()) !== 8) data = extractYYYYMMDD(data);
         if (dataType === "TIME") data = extractHHMM(data);
         if (dataType === "DATETIME") data = `${extractYYYYMMDD(Math.floor(data))} ${extractHHMM(data % 1)}`;
+        if (DATATYPE_STRING_INPUT_TYPE.includes(dataType)) data = `'${data}'`;
         statement += data + ", ";
     }
     statement = statement.slice(0, -2) + `);`;
@@ -120,4 +123,10 @@ function extractHHMM(cellValue) {
     const minutes = Math.floor(cellValue * 24 * 60) % 60;
     const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     return formattedTime;
+}
+
+function countDigits(dateData) {
+    const digits = dateData.match(/\d/g);
+    if (digits === null) return 0;
+    return digits.length;
 }
