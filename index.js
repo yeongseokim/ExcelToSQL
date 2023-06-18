@@ -6,6 +6,7 @@ let tableDependencyState = {};
 const DATATYPE_UNNEED_LENGTH = ['INT', 'DATE', 'BOOLEAN', 'TIME', 'DATETIME', 'TIMESTAMP', 'YEAR'];
 const DATATYPE_CAN_HAVE_LENGTH = ['BIGINT', 'TINYINT', 'SMALLINT', 'MEDIUMINT', 'FLOAT', 'DOUBLE'];
 const DATATYPE_NEED_LENGTH = ['CHAR', 'VARCHAR', 'BLOB', 'TEXT', 'TINYTEXT', 'LONGTEXT', 'MEDIUMTEXT', 'ENUM', 'DECIMAL'];
+const DATATYPE_STRING_INPUT_TYPE = ['CHAR', 'VARCHAR', 'BLOB', 'TEXT', 'TINYTEXT', 'LONGTEXT', 'MEDIUMTEXT', 'ENUM', 'DATE', 'BOOLEAN', 'TIME', 'DATETIME', 'TIMESTAMP', 'YEAR'];
 
 const CORRECT_INPUT_FORMAT = /^([a-zA-Z]+)\((\d+)\)$/;
 const ERROR_UNVALID_FORMAT_MESSAGE = `유효하지 않은 입력 형식입니다.\n데이터의 길이를 명시해야하는 데이터타입은 Datatype(Length)의 형식으로\nDatatype은 string, Length는 숫자로 입력해주세요.`;
