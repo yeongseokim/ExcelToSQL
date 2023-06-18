@@ -92,7 +92,12 @@ function createInsertStatement(tableName, valueObj) {
     let statement = `INSERT INTO ${tableName.toUpperCase()} VALUES(`;
 
     for (const attr of attrs) {
-        statement += valueObj[attr] + ", ";
+        const dataType = attributeState[tableName][attr].dataType;
+        let data = valueObj[attr];
+        if (dataType === "DATE") data = extractYYYYMMDD(data);
+        if (dataType === "TIME") data = extractHHMM(data);
+        if (dataType === "DATETIME") data = `${extractYYYYMMDD(Math.floor(data))} ${extractHHMM(data % 1)}`;
+        statement += data + ", ";
     }
     statement = statement.slice(0, -2) + `);`;
     p.innerText = statement;
