@@ -33,6 +33,11 @@ function drawSQLScript() {
             div.appendChild(createCreateStatementForeignKey(fkObj))
         }
         div.appendChild(createCreateStatementEnd());
+
+        const dataTable = excelState[tableName];
+        for (const tuple of dataTable) {
+            div.appendChild(createInsertStatement(tableName, tuple));
+        }
     }
     sqlContainer.appendChild(div);
 }
@@ -81,13 +86,15 @@ function createCreateStatementForeignKey(fkobj) {
     return p;
 }
 
-function createInsertStatement(tableName, values) {
+function createInsertStatement(tableName, valueObj) {
     const p = generateStatementElement();
+    const attrs = Object.keys(valueObj);
     let statement = `INSERT INTO ${tableName.toUpperCase()} VALUES(`;
-    for (let i = 0; i < values.length - 1; i++) {
-        statement += values[i] + ", ";
+
+    for (const attr of attrs) {
+        statement += valueObj[attr] + ", ";
     }
-    statement += values[values.length - 1] + `);`;
+    statement = statement.slice(0, -2) + `);`;
     p.innerText = statement;
     return p;
 }
