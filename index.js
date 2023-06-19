@@ -596,6 +596,7 @@ function setFK(e) {
     if (selectedOption === "default" && currentFK !== true) {
         deleteDependency(table, attribute, "fk");
         attributeState[table][attribute].fk = true;
+        drawSQLScript();
         return;
     }
     if (currentFK && currentFK !== true) {
