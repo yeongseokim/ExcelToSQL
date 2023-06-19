@@ -4,9 +4,9 @@ function drawSQLScript() {
 
     const div = document.createElement("div");
     div.id = "sqlTextContainer";
+    const tableOrder = getTableOrder();
 
-    for (const tableName of sheetNamesState) {
-        //console.log(`===================${tableName}===================`)
+    for (const tableName of tableOrder) {
         div.appendChild(createCreateStatementStart(tableName));
         const table = attributeState[tableName];
         const attributeList = Object.keys(table);
@@ -42,6 +42,36 @@ function drawSQLScript() {
         div.insertAdjacentHTML('beforeend', `<br>`);
     }
     sqlContainer.appendChild(div);
+}
+
+function getTableOrder() {
+    const sortedArr = [];
+    const visited = {};
+
+    function topologicalSort(node) {
+        visited[node] = true;
+
+        if (tableDependencyState[node]) {
+            for (let i = 0; i < tableDependencyState[node].length; i++) {
+                const dependencyNode = tableDependencyState[node][i];
+
+                if (!visited[dependencyNode]) {
+                    topologicalSort(dependencyNode);
+                }
+            }
+        }
+
+        sortedArr.unshift(node);
+    }
+
+    for (let i = 0; i < sheetNamesState.length; i++) {
+        const node = sheetNamesState[i];
+
+        if (!visited[node]) {
+            topologicalSort(node);
+        }
+    }
+    return sortedArr;
 }
 
 function generateStatementElement() {
