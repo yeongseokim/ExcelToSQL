@@ -351,6 +351,15 @@ function editDataType(e) {
             return;
         }
 
+        if (DATATYPE_NEED_LENGTH.includes(editedDataType)) {
+            attributeState[tableName][attributeName].dataType = editedDataType;
+            attributeState[tableName][attributeName].isDataTypeSpecified = true;
+
+            e.target.innerText = determineDataTypeView(attributeState[tableName][attributeName]);
+            drawSQLScript();
+            return;
+        }
+
         if (!CORRECT_INPUT_FORMAT.test(editedDataType)) {
             alert(ERROR_UNVALID_FORMAT_MESSAGE);
             e.target.innerText = determineDataTypeView(attributeState[tableName][attributeName]);
