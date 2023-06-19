@@ -7,6 +7,8 @@ const DATATYPE_UNNEED_LENGTH = ['INT', 'DATE', 'BOOLEAN', 'TIME', 'DATETIME', 'T
 const DATATYPE_CAN_HAVE_LENGTH = ['BIGINT', 'TINYINT', 'SMALLINT', 'MEDIUMINT', 'FLOAT', 'DOUBLE'];
 const DATATYPE_NEED_LENGTH = ['CHAR', 'VARCHAR', 'BLOB', 'TEXT', 'TINYTEXT', 'LONGTEXT', 'MEDIUMTEXT', 'ENUM', 'DECIMAL'];
 const DATATYPE_STRING_INPUT_TYPE = ['CHAR', 'VARCHAR', 'BLOB', 'TEXT', 'TINYTEXT', 'LONGTEXT', 'MEDIUMTEXT', 'ENUM', 'DATE', 'BOOLEAN', 'TIME', 'DATETIME', 'TIMESTAMP', 'YEAR'];
+const DATATYPE_INT = ['INT', 'BIGINT', 'TINYINT', 'SMALLINT', 'MEDIUMINT'];
+const DATATYPE_FLOAT = ['FLOAT', 'DOUBLE'];
 
 const CORRECT_INPUT_FORMAT = /^([a-zA-Z]+)\((\d+)\)$/;
 const ERROR_UNVALID_FORMAT_MESSAGE = `유효하지 않은 입력 형식입니다.\n데이터의 길이를 명시할 경우 Datatype(Length)의 형식으로\nDatatype은 string, Length는 숫자로 입력해주세요.\n데이터 길이를 명시하지 않을 경우 data table의 최대 길이로 설정됩니다.`;
@@ -18,6 +20,8 @@ const ERROR_UNVALID_DATATYPE_MESSAGE = `유효하지 않은 데이터타입입�
 const ERROR_UNVALID_LENGTH_DATATYPE_MESSAGE = function (maxLength) {
     return `유효하지 않은 데이터 길이입니다.\n존재하는 데이터보다 작은 길이를 입력할 수 없습니다. ${maxLength}보다 큰 값을 입력하거나 데이터 테이블을 수정하세요.`;
 }
+const ERROR_PRIMARY_KEY_CONSTRAINT_NULL = `기본 키에는 NULL 값이 올 수 없습니다.\n데이터 테이블에서 NULL 값을 수정하고 다시 시도하세요.`;
+const ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE = `기본 키 값은 중복될 수 없습니다.\n데이터 테이블에서 중복 값을 수정하고 다시 시도하세요.`;
 
 /* File */
 document.addEventListener('DOMContentLoaded', function () {
@@ -141,9 +145,15 @@ function editTableData(e) {
         document.activeElement.blur();
 
         const [tableName, arrayIndex, attributeName] = e.target.id.split('-');
-        const editedData = e.target.innerText;
+        let editedData = e.target.innerText;
+        const dataType = attributeState[tableName][attributeName].dataType;
+        const isNull = (editedData.toUpperCase() === "NULL");
+
+        if (!isNull && DATATYPE_INT.includes(dataType)) editedData = parseInt(editedData);
+        if (!isNull && DATATYPE_FLOAT.includes(dataType)) editedData = parseFloat(editedData);
 
         excelState[tableName][arrayIndex][attributeName] = editedData;
+        console.log(excelState[tableName][arrayIndex][attributeName]);
     }
 }
 
@@ -421,10 +431,31 @@ function constraintsHandler(e) {
         attributeState[tableName][attributeName][targetKey] = false;
     }
     else {
+        if (!checkEntityIntegrityConstraint(tableName, attributeName, targetKey)) return;
         targetClassList.add(COLOR_CLASS_NAME);
         attributeState[tableName][attributeName][targetKey] = true;
     }
     drawSQLScript();
+}
+
+function checkEntityIntegrityConstraint(tableName, attributeName, targetKey) {
+    if (targetKey === 'fk') return true;
+    const targetTableDataArray = excelState[tableName];
+    let duplicateCheckArray = [];
+    for (const dataObj of targetTableDataArray) {
+        const targetData = dataObj[attributeName];
+        if (targetData.toString().toUpperCase() === "NULL") {
+            alert(ERROR_PRIMARY_KEY_CONSTRAINT_NULL);
+            return false;
+        };
+        if (duplicateCheckArray.includes(targetData)) {
+            alert(ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE);
+            return false;
+        }
+        duplicateCheckArray.push(targetData);
+        console.log(duplicateCheckArray);
+    }
+    return true;
 }
 
 function deleteDependency(tableName, attributeName, targetKey) {
