@@ -17,11 +17,11 @@ const ERROR_UNVALID_DATATYPE_MESSAGE = `유효하지 않은 데이터타입입�
 2. 문자열 데이터 타입: CHAR, VARCHAR, TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT, ENUM
 3. 날짜 및 시간 데이터 타입: DATE, TIME, DATETIME, TIMESTAMP, YEAR
 4. 기타 데이터 타입: BOOLEAN, BLOB`;
-const ERROR_UNVALID_LENGTH_DATATYPE_MESSAGE = function (maxLength) {
+const ERROR_UNVALID_LENGTH_DATATYPE_MESSAGE = (maxLength) => {
     return `유효하지 않은 데이터 길이입니다.\n존재하는 데이터보다 작은 길이를 입력할 수 없습니다. ${maxLength}보다 큰 값을 입력하거나 데이터 테이블을 수정하세요.`;
 }
-const ERROR_PRIMARY_KEY_CONSTRAINT_NULL = `기본 키에는 NULL 값이 올 수 없습니다.\n데이터 테이블에서 NULL 값을 수정하고 다시 시도하세요.`;
-const ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE = `기본 키 값은 중복될 수 없습니다.\n데이터 테이블에서 중복 값을 수정하고 다시 시도하세요.`;
+const ERROR_PRIMARY_KEY_CONSTRAINT_NULL = (index) => `기본 키에는 NULL 값이 올 수 없습니다.\n데이터 테이블 ${index + 1}번째 행에서 NULL 값을 수정하고 다시 시도하세요.`;
+const ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE = (dupindex, curindex, key) => `기본 키 값은 중복될 수 없습니다.\n데이터 테이블 ${dupindex + 1}, ${curindex + 1}번째 행에서 키 ${key}에 대한 중복 값을 수정하고 다시 시도하세요.`;
 
 /* File */
 document.addEventListener('DOMContentLoaded', function () {
@@ -155,7 +155,7 @@ function editTableData(e) {
 
         if (pk) {
             if (isNull) {
-                alert(ERROR_PRIMARY_KEY_CONSTRAINT_NULL.slice(0, 24));
+                alert(ERROR_PRIMARY_KEY_CONSTRAINT_NULL(arrayIndex).slice(0, 24));
                 e.target.innerText = excelState[tableName][arrayIndex][attributeName];
                 return;
             }
@@ -163,7 +163,7 @@ function editTableData(e) {
             for (const dataObj of targetTableDataArray) {
                 const targetData = dataObj[attributeName];
                 if (editedData === targetData) {
-                    alert(ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE.slice(0, 19));
+                    alert(ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE("", "", "").slice(0, 19));
                     e.target.innerText = excelState[tableName][arrayIndex][attributeName];
                     return;
                 }
@@ -458,16 +458,19 @@ function constraintsHandler(e) {
 
 function checkEntityIntegrityConstraint(tableName, attributeName, targetKey) {
     if (targetKey === 'fk') return true;
+
     const targetTableDataArray = excelState[tableName];
     let duplicateCheckArray = [];
-    for (const dataObj of targetTableDataArray) {
-        const targetData = dataObj[attributeName];
+    for (const tuple of targetTableDataArray) {
+        const targetData = tuple[attributeName];
+        const currentindex = targetTableDataArray.indexOf(tuple);
+        const duplicateIndex = duplicateCheckArray.indexOf(targetData);
         if (targetData.toString().toUpperCase() === "NULL") {
-            alert(ERROR_PRIMARY_KEY_CONSTRAINT_NULL);
+            alert(ERROR_PRIMARY_KEY_CONSTRAINT_NULL(currentindex));
             return false;
         };
         if (duplicateCheckArray.includes(targetData)) {
-            alert(ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE);
+            alert(ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE(duplicateIndex, currentindex, targetData));
             return false;
         }
         duplicateCheckArray.push(targetData);
@@ -475,10 +478,38 @@ function checkEntityIntegrityConstraint(tableName, attributeName, targetKey) {
     return true;
 }
 
+function getPrimaryKeyAttributeList(tableName) {
+    const targetTable = attributeState[tableName]
+    const sameTableAttributeList = Object.keys(targetTable);
+    let primaryKeyAttributeList = [];
+    for (const attribute of sameTableAttributeList) {
+        if (targetTable[attribute].pk) primaryKeyAttributeList.push(attribute);
+    }
+    return primaryKeyAttributeList;
+}
+
+function checkCompositeKey(tableName, primaryKeyAttributeList) {
+    const targetTable = excelState[tableName];
+    let duplicateCheckArray = [];
+    for (const tuple of targetTable) {
+        let compositeKey = "";
+        for (const attribute of primaryKeyAttributeList) {
+            compositeKey += tuple[attribute] + '-';
+        }
+        if (duplicateCheckArray.includes(compositeKey)) {
+            const currentindex = targetTable.indexOf(tuple);
+            const duplicateIndex = duplicateCheckArray.indexOf(compositeKey);
+            const statement = compositeKey.slice(0, -1);
+            alert(ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE(duplicateIndex, currentindex, statement));
+        }
+        duplicateCheckArray.push(compositeKey);
+    }
+
+}
+
 function deleteDependency(tableName, attributeName, targetKey) {
     if (targetKey === 'pk') return;
     if (attributeState[tableName][attributeName][targetKey] === true) return;
-
     const [refTable,] = attributeState[tableName][attributeName][targetKey].split('.');
     const index = tableDependencyState[refTable].indexOf(tableName);
     if (index > -1) {
@@ -535,6 +566,7 @@ function createDropdown() {
     const select = document.createElement("select");
     select.classList.add("dropdown");
     const optionDefault = document.createElement("option");
+    optionDefault.value = "default";
     optionDefault.innerText = "table.attribute";
     select.appendChild(optionDefault);
 
@@ -556,8 +588,20 @@ function createDropdown() {
 
 function setFK(e) {
     const selectedOption = e.target.value;
-    const [referencedTable,] = selectedOption.split('.');
     const [table, attribute,] = e.target.parentElement.id.split("-");
+    const currentFK = attributeState[table][attribute].fk;
+    if (selectedOption === "default" && currentFK === true) {
+        return;
+    }
+    if (selectedOption === "default" && currentFK !== true) {
+        deleteDependency(table, attribute, "fk");
+        attributeState[table][attribute].fk = true;
+        return;
+    }
+    if (currentFK && currentFK !== true) {
+        deleteDependency(table, attribute, "fk");
+    }
+    const [referencedTable,] = selectedOption.split('.');
     attributeState[table][attribute].fk = selectedOption;
     tableDependencyState[referencedTable].push(table);
     drawSQLScript();
