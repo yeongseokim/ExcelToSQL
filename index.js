@@ -147,13 +147,31 @@ function editTableData(e) {
         const [tableName, arrayIndex, attributeName] = e.target.id.split('-');
         let editedData = e.target.innerText;
         const dataType = attributeState[tableName][attributeName].dataType;
+        const pk = attributeState[tableName][attributeName].pk;
         const isNull = (editedData.toUpperCase() === "NULL");
 
         if (!isNull && DATATYPE_INT.includes(dataType)) editedData = parseInt(editedData);
         if (!isNull && DATATYPE_FLOAT.includes(dataType)) editedData = parseFloat(editedData);
 
+        if (pk) {
+            if (isNull) {
+                alert(ERROR_PRIMARY_KEY_CONSTRAINT_NULL.slice(0, 24));
+                e.target.innerText = excelState[tableName][arrayIndex][attributeName];
+                return;
+            }
+            const targetTableDataArray = excelState[tableName];
+            for (const dataObj of targetTableDataArray) {
+                const targetData = dataObj[attributeName];
+                if (editedData === targetData) {
+                    alert(ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE.slice(0, 19));
+                    e.target.innerText = excelState[tableName][arrayIndex][attributeName];
+                    return;
+                }
+            }
+        }
+
         excelState[tableName][arrayIndex][attributeName] = editedData;
-        console.log(excelState[tableName][arrayIndex][attributeName]);
+        drawSQLScript();
     }
 }
 
@@ -453,7 +471,6 @@ function checkEntityIntegrityConstraint(tableName, attributeName, targetKey) {
             return false;
         }
         duplicateCheckArray.push(targetData);
-        console.log(duplicateCheckArray);
     }
     return true;
 }
