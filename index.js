@@ -9,12 +9,15 @@ const DATATYPE_NEED_LENGTH = ['CHAR', 'VARCHAR', 'BLOB', 'TEXT', 'TINYTEXT', 'LO
 const DATATYPE_STRING_INPUT_TYPE = ['CHAR', 'VARCHAR', 'BLOB', 'TEXT', 'TINYTEXT', 'LONGTEXT', 'MEDIUMTEXT', 'ENUM', 'DATE', 'BOOLEAN', 'TIME', 'DATETIME', 'TIMESTAMP', 'YEAR'];
 
 const CORRECT_INPUT_FORMAT = /^([a-zA-Z]+)\((\d+)\)$/;
-const ERROR_UNVALID_FORMAT_MESSAGE = `유효하지 않은 입력 형식입니다.\n데이터의 길이를 명시해야하는 데이터타입은 Datatype(Length)의 형식으로\nDatatype은 string, Length는 숫자로 입력해주세요.`;
+const ERROR_UNVALID_FORMAT_MESSAGE = `유효하지 않은 입력 형식입니다.\n데이터의 길이를 명시할 경우 Datatype(Length)의 형식으로\nDatatype은 string, Length는 숫자로 입력해주세요.\n데이터 길이를 명시하지 않을 경우 data table의 최대 길이로 설정됩니다.`;
 const ERROR_UNVALID_DATATYPE_MESSAGE = `유효하지 않은 데이터타입입니다.\n입력할 수 있는 데이터는 다음과 같습니다.\n
 1. 숫자 데이터 타입: TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT, FLOAT, DOUBLE, DECIMAL
 2. 문자열 데이터 타입: CHAR, VARCHAR, TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT, ENUM
 3. 날짜 및 시간 데이터 타입: DATE, TIME, DATETIME, TIMESTAMP, YEAR
 4. 기타 데이터 타입: BOOLEAN, BLOB`;
+const ERROR_UNVALID_LENGTH_DATATYPE_MESSAGE = function (maxLength) {
+    return `유효하지 않은 데이터 길이입니다.\n존재하는 데이터보다 작은 길이를 입력할 수 없습니다. ${maxLength}보다 큰 값을 입력하거나 데이터 테이블을 수정하세요.`;
+}
 
 /* File */
 document.addEventListener('DOMContentLoaded', function () {
@@ -70,6 +73,7 @@ function makeAttributeObject() {
             attributeState[table][attribute].dataType = identifyDataType(data);
             attributeState[table][attribute].pk = false;
             attributeState[table][attribute].fk = false;
+            attributeState[table][attribute].selectLength = false;
 
             if (DATATYPE_UNNEED_LENGTH.includes(attributeState[table][attribute].dataType) || DATATYPE_CAN_HAVE_LENGTH.includes(attributeState[table][attribute].dataType)) attributeState[table][attribute].isDataTypeSpecified = false;
             else attributeState[table][attribute].isDataTypeSpecified = true;
@@ -332,6 +336,7 @@ function determineDataTypeView(targetObj) {
 
     if (DATATYPE_UNNEED_LENGTH.includes(dataType)) return `${dataType}`;
     if (DATATYPE_CAN_HAVE_LENGTH.includes(dataType) && !targetObj.isDataTypeSpecified) return `${dataType}`
+    if (targetObj.selectLength) return `${dataType}(${targetObj.selectLength})`;
     return `${dataType}(${targetObj.maxLength})`;
 }
 
@@ -373,12 +378,18 @@ function editDataType(e) {
             return;
         }
 
+        if (attributeState[tableName][attributeName].maxLength > length) {
+            alert(ERROR_UNVALID_LENGTH_DATATYPE_MESSAGE(attributeState[tableName][attributeName].maxLength));
+            e.target.innerText = determineDataTypeView(attributeState[tableName][attributeName]);
+            return;
+        }
+
         if (DATATYPE_CAN_HAVE_LENGTH.includes(datatype)) {
             attributeState[tableName][attributeName].isDataTypeSpecified = true;
         }
 
         attributeState[tableName][attributeName].dataType = datatype;
-        attributeState[tableName][attributeName].maxLength = length;
+        attributeState[tableName][attributeName].selectLength = length;
 
         e.target.innerText = determineDataTypeView(attributeState[tableName][attributeName]);
         drawSQLScript();
