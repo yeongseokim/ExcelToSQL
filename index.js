@@ -125,10 +125,25 @@ function drawTable(sheetName) {
             if (key.includes("EMPTY")) continue;
             const cellData = targetTable[i][key];
             const cell = document.createElement('td');
+            cell.id = `${sheetName}-${i}-${key}-data`
+            cell.contentEditable = true;
+            cell.addEventListener("keypress", editTableData);
             cell.textContent = cellData;
             row.appendChild(cell);
         }
         excelTable.appendChild(row);
+    }
+}
+
+function editTableData(e) {
+    if (window.event.keyCode == 13) {
+        e.preventDefault();
+        document.activeElement.blur();
+
+        const [tableName, arrayIndex, attributeName] = e.target.id.split('-');
+        const editedData = e.target.innerText;
+
+        excelState[tableName][arrayIndex][attributeName] = editedData;
     }
 }
 
