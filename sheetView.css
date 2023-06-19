@@ -33,6 +33,7 @@ select {
 
 .dropdown {
     max-width: 120px;
+    border-color: var(--gray-light0);
 }
 
 @media (max-width:1270px) {
