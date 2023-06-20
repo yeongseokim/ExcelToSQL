@@ -32,6 +32,7 @@ function drawSQLScript() {
         for (const fkObj of fkObjList) {
             div.appendChild(createCreateStatementForeignKey(fkObj))
         }
+        div.lastChild.innerText = div.lastChild.innerText.slice(0, -1);
         div.appendChild(createCreateStatementEnd());
         div.insertAdjacentHTML('beforeend', `<br>`);
 
