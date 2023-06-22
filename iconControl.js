@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-function ToggleBlock(classtype) {
-    const targetBlock = document.getElementById(`${classtype}Behind`);
+function ToggleBlock(sheetName) {
+    const targetBlock = document.getElementById(`${sheetName}Behind`);
     const currentDisplay = targetBlock.style.display;
     const newDisplay = (currentDisplay === 'none') ? '' : 'none';
     targetBlock.style.display = newDisplay;

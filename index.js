@@ -3,6 +3,7 @@ let excelState = {};
 let sheetNamesState = [];
 let attributeState = {};
 let tableDependencyState = {};
+let currentOpenSheetState = [];
 const DATATYPE_UNNEED_LENGTH = ['INT', 'DATE', 'BOOLEAN', 'TIME', 'DATETIME', 'TIMESTAMP', 'YEAR'];
 const DATATYPE_CAN_HAVE_LENGTH = ['BIGINT', 'TINYINT', 'SMALLINT', 'MEDIUMINT', 'FLOAT', 'DOUBLE'];
 const DATATYPE_NEED_LENGTH = ['CHAR', 'VARCHAR', 'BLOB', 'TEXT', 'TINYTEXT', 'LONGTEXT', 'MEDIUMTEXT', 'ENUM', 'DECIMAL'];
@@ -197,7 +198,16 @@ function drawSheetNames() {
         sheetContainerSheetList.appendChild(sheetButton);
         sheetContainerSheetList.appendChild(attributeBox);
     });
+    drawOpenSheet();
     drawPKFKDescription();
+}
+
+function drawOpenSheet() {
+    for (const sheetName of currentOpenSheetState) {
+        ToggleBlock(sheetName);
+        const targetButton = document.getElementById(`${sheetName}Button`);
+        ToggleIcon(targetButton);
+    }
 }
 
 function drawPKFKDescription() {
@@ -235,12 +245,26 @@ function createExcelContainerSheetElement(sheetName) {
     return sheetElement;
 }
 
+function setCurrentOpenSheet(sheetName) {
+    const index = currentOpenSheetState.indexOf(sheetName);
+    if (index === -1) {
+        currentOpenSheetState.push(sheetName);
+        console.log(currentOpenSheetState);
+
+        return;
+    }
+    currentOpenSheetState = [...currentOpenSheetState.slice(0, index), ...currentOpenSheetState.slice(index + 1)];
+    console.log(currentOpenSheetState);
+}
+
 function createSheetContainerSheetButton(sheetName) {
     const sheetButton = document.createElement('button');
+    sheetButton.id = `${sheetName}Button`;
     sheetButton.classList.add("toggleButton", "sheetButton");
     sheetButton.addEventListener('click', function () {
         ToggleIcon(sheetButton);
         ToggleBlock(sheetName);
+        setCurrentOpenSheet(sheetName);
         determineSQLContainerHeight(0);
     });
 
@@ -269,6 +293,7 @@ function editName(e) {
         editAttributeState(preName, editedName);
         editSheetNamesState(preName, editedName);
         editTableDependencyState(preName, editedName);
+        editOpenSheetState(preName, editedName);
         e.target.id = editedName;
 
         drawSheetNames();
@@ -317,6 +342,13 @@ function editTableDependencyState(preName, newName) {
     }
     tableDependencyState[newName] = [...tableDependencyState[preName]];
     delete tableDependencyState[preName];
+}
+
+function editOpenSheetState(preName, newName) {
+    const index = currentOpenSheetState.indexOf(preName);
+    if (index === -1) return;
+    currentOpenSheetState[index] = newName;
+    console.log(currentOpenSheetState);
 }
 
 function createSheetContainerAttributeList(sheetName) {
