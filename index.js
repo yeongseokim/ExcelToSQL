@@ -146,12 +146,12 @@ function editTableData(e) {
 
         const [tableName, arrayIndex, attributeName] = e.target.id.split('-');
         let editedData = e.target.innerText;
+        const editedLength = editedData.length;
         const dataType = attributeState[tableName][attributeName].dataType;
         const pk = attributeState[tableName][attributeName].pk;
         const isNull = (editedData.toUpperCase() === "NULL");
 
-        if (!isNull && DATATYPE_INT.includes(dataType)) editedData = parseInt(editedData);
-        if (!isNull && DATATYPE_FLOAT.includes(dataType)) editedData = parseFloat(editedData);
+        editedData = getDataByDataTypeSettings(dataType, editedData);
 
         if (pk) {
             if (isNull) {
@@ -171,6 +171,12 @@ function editTableData(e) {
         }
 
         excelState[tableName][arrayIndex][attributeName] = editedData;
+
+        if (editedLength > attributeState[tableName][attributeName].maxLength) {
+            searchMaxLength();
+            drawSheetNames();
+        }
+
         drawSQLScript();
     }
 }
@@ -268,6 +274,7 @@ function editName(e) {
         drawSheetNames();
         drawSQLScript();
         drawReferecingSelect();
+        drawTable(editedName);
     }
 }
 
@@ -277,7 +284,7 @@ function editSheetNamesState(preName, newName) {
 }
 
 function editExcelState(preName, newName) {
-    excelState[newName] = { ...excelState[preName] };
+    excelState[newName] = [...excelState[preName]];
     delete excelState[preName];
 }
 
@@ -310,9 +317,6 @@ function editTableDependencyState(preName, newName) {
     }
     tableDependencyState[newName] = [...tableDependencyState[preName]];
     delete tableDependencyState[preName];
-
-    console.log(attributeState);
-    console.log(tableDependencyState);
 }
 
 function createSheetContainerAttributeList(sheetName) {
@@ -449,7 +453,7 @@ function constraintsHandler(e) {
         attributeState[tableName][attributeName][targetKey] = false;
     }
     else {
-        if (!checkEntityIntegrityConstraint(tableName, attributeName, targetKey)) return;
+        //if (!checkEntityIntegrityConstraint(tableName, attributeName, targetKey)) return;
         targetClassList.add(COLOR_CLASS_NAME);
         attributeState[tableName][attributeName][targetKey] = true;
     }
@@ -599,11 +603,53 @@ function setFK(e) {
         drawSQLScript();
         return;
     }
+
+    const [referencedTable, referencedAttribute] = selectedOption.split('.');
+
+    if (!checkReferentialIntegrityConstraint(table, attribute, referencedTable, referencedAttribute)) {
+        const option = e.target.querySelector(`option[value="default"]`);
+        option.selected = true;
+        return;
+    }
+
     if (currentFK && currentFK !== true) {
         deleteDependency(table, attribute, "fk");
     }
-    const [referencedTable,] = selectedOption.split('.');
     attributeState[table][attribute].fk = selectedOption;
     tableDependencyState[referencedTable].push(table);
     drawSQLScript();
+}
+
+function checkReferentialIntegrityConstraint(table, attribute, referencedTable, referencedAttribute) {
+    const checkDataType = attributeState[table][attribute].dataType;
+    const refDataType = attributeState[referencedTable][referencedAttribute].dataType;
+    if (checkDataType !== refDataType) {
+        alert("데이터타입이 같아야 합니다.");
+        return false;
+    }
+
+    let refArray = [];
+    const refTable = excelState[referencedTable];
+    for (const refData of refTable) {
+        const reftarget = getDataByDataTypeSettings(refDataType, refData[referencedAttribute]);
+        refArray.push(reftarget);
+    }
+
+    const checkTable = excelState[table];
+    for (const checkData of checkTable) {
+        const target = getDataByDataTypeSettings(checkDataType, checkData[attribute]);
+        const isNull = (target.toString().toUpperCase() === "NULL");
+        if (!refArray.includes(target) && !isNull) {
+            alert(`참조하는 애트리뷰트와 해당 애트리뷰트의 도메인이 일치하지 않습니다.`)
+            return false
+        };
+    }
+    return true;
+}
+
+function getDataByDataTypeSettings(datatype, data) {
+    if (data.toString().toUpperCase() === "NULL") return data;
+    if (DATATYPE_INT.includes(datatype)) return parseInt(data);
+    if (DATATYPE_FLOAT.includes(datatype)) return parseFloat(data);
+    return data;
 }
