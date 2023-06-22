@@ -1,4 +1,5 @@
 function downloadSQL() {
+    drawSQLScript(true);
     const sqlText = document.getElementById('sqlTextContainer').innerText;
     const blob = new Blob([sqlText], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -11,6 +12,7 @@ function downloadSQL() {
 }
 
 function copySQL() {
+    drawSQLScript(true);
     const sqlText = document.getElementById('sqlTextContainer').innerText;
 
     navigator.clipboard.writeText(sqlText)
