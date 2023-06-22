@@ -1,10 +1,10 @@
-function drawSQLScript() {
+function drawSQLScript(isExport = false) {
     const sqlContainer = document.getElementById("sqlContainer");
     sqlContainer.innerHTML = "";
 
     const div = document.createElement("div");
     div.id = "sqlTextContainer";
-    const tableOrder = getTableOrder();
+    const tableOrder = isExport ? getTableOrder() : sheetNamesState;
 
     for (const tableName of tableOrder) {
         div.appendChild(createCreateStatementStart(tableName));
@@ -128,7 +128,7 @@ function createInsertStatement(tableName, valueObj) {
         const dataType = attributeState[tableName][attr].dataType;
         let data = valueObj[attr];
         if (dataType === "DATE" && countDigits(data.toString()) !== 8) data = extractYYYYMMDD(data);
-        if (dataType === "TIME") data = extractHHMM(data);
+        if (dataType === "TIME") data = extractHHMM(data % 1);
         if (dataType === "DATETIME") data = `${extractYYYYMMDD(Math.floor(data))} ${extractHHMM(data % 1)}`;
         if (DATATYPE_STRING_INPUT_TYPE.includes(dataType)) data = `'${data}'`;
         statement += data + ", ";
