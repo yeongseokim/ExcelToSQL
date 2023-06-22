@@ -78,6 +78,7 @@ footer {
 
 footer span {
     padding: 0px 50px;
+    color: var(--background-dark);
 }
 
 main {
