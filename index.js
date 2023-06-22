@@ -365,6 +365,8 @@ function createSheetContainerAttributeList(sheetName) {
     attributeBox.style.display = "none";
 
     const attributes = Object.keys(targetTable);
+    const rowspan = attributes.length;
+
     for (const attribute of attributes) {
         const targetObject = targetTable[attribute];
         const attributeList = document.createElement("tr"); //행 생성
@@ -372,7 +374,9 @@ function createSheetContainerAttributeList(sheetName) {
 
         const tdName = document.createElement("td"); //이름 열에는 키
         tdName.innerText = attribute;
+        // tdName.rowSpan = 2;
         attributeList.appendChild(tdName);
+        attributeList.classList.add("attributeList");
 
         const tdDataType = document.createElement("td"); //데이터타입
         tdDataType.id = `${sheetName}-${attribute}-dataType`;
@@ -399,15 +403,47 @@ function createSheetContainerAttributeList(sheetName) {
         isForeignKey.addEventListener("click", fkHandler);
         constraintsForeignKey.appendChild(isForeignKey);
 
-        attributeList.classList.add("attributeList");
         attributeList.appendChild(tdName);
         attributeList.appendChild(tdDataType);
         attributeList.appendChild(constraintsPrimaryKey);
         attributeList.appendChild(constraintsForeignKey);
 
+        // const constraintsList = document.createElement("tr");
+        // const tdNOTNULL = createCheckElement(sheetName, attribute, "notnull");
+        // const tdUNIQUE = createCheckElement(sheetName, attribute, "unique");
+        // const tdDEFAULT = createCheckElement(sheetName, attribute, "default");
+        // constraintsList.appendChild(tdNOTNULL);
+        // constraintsList.appendChild(tdUNIQUE);
+        // constraintsList.appendChild(tdDEFAULT);
+
         attributeBox.appendChild(attributeList);
+        // attributeBox.appendChild(constraintsList);
     }
     return attributeBox
+}
+
+function createCheckElement(sheetName, attribute, labelText) {
+    const td = document.createElement("td");
+    const idAndLabel = `${sheetName}-${attribute}-${labelText}`;
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.id = idAndLabel;
+    input.addEventListener("change", attributeCheckBoxClick);
+
+    const label = document.createElement("label");
+    const textNode = document.createTextNode(labelText.toUpperCase());
+
+    label.appendChild(input);
+    label.appendChild(textNode);
+
+    td.appendChild(label);
+
+    return td;
+}
+
+function attributeCheckBoxClick() {
+
 }
 
 function determineDataTypeView(targetObj) {
