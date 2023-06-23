@@ -254,12 +254,10 @@ function setCurrentOpenSheet(sheetName) {
     const index = currentOpenSheetState.indexOf(sheetName);
     if (index === -1) {
         currentOpenSheetState.push(sheetName);
-        console.log(currentOpenSheetState);
 
         return;
     }
     currentOpenSheetState = [...currentOpenSheetState.slice(0, index), ...currentOpenSheetState.slice(index + 1)];
-    console.log(currentOpenSheetState);
 }
 
 function createSheetContainerSheetButton(sheetName) {
@@ -379,9 +377,11 @@ function createSheetContainerAttributeList(sheetName) {
     for (const attribute of attributes) {
         const targetObject = targetTable[attribute];
         const attributeList = document.createElement("tr"); //행 생성
-        attributeList.id = `${sheetName}-${attribute}`
+        attributeList.id = `${sheetName}-${attribute}`;
+        attributeList.addEventListener('click', scrollToSQL);
 
         const tdName = document.createElement("td"); //이름 열에는 키
+        tdName.id = `${sheetName}-${attribute}-name`;
         tdName.innerText = attribute;
         tdName.rowSpan = 2;
         attributeList.appendChild(tdName);
@@ -482,7 +482,6 @@ function attributeCheckBoxClick(e) {
         return;
     }
     attributeState[tableName][attributeName][targetConstraint] = isChecked;
-    console.log(attributeState);
     drawSQLScript();
 }
 
@@ -492,7 +491,6 @@ function enterDefaultText(e) {
         const [tableName, attributeName,] = e.target.id.split('-');
         attributeState[tableName][attributeName]["default"] = e.target.value;
         drawSQLScript();
-        console.log(attributeState);
     }
 }
 
@@ -574,15 +572,12 @@ function constraintsHandler(e) {
     }
     else {
         if (targetKey === 'pk') {
-            console.log('pk신청');
             if (targetClassList.contains(PROBLEM_CLASS_NAME)) {
                 targetClassList.remove(PROBLEM_CLASS_NAME);
                 popTableCopmositeKeyState(tableName, attributeName);
                 return;
             }
             const keyCheck = checkEntityIntegrityConstraint(tableName, attributeName);
-            console.log('attributeName - keyCheck', attributeName, keyCheck);
-            console.log(tableCompositeKeyState);
             if (keyCheck === 'null') return;
             if (keyCheck === false) {
                 targetClassList.add(PROBLEM_CLASS_NAME);
@@ -591,9 +586,7 @@ function constraintsHandler(e) {
             if (keyCheck === true) {
                 const primaryKeyAttributeList = tableCompositeKeyState[tableName];
                 for (const attribute of primaryKeyAttributeList) {
-                    console.log('전부 pk=true를 해줘야 함', attribute);
                     const isAlreadyPK = attributeState[tableName][attribute][targetKey];
-                    console.log('attributeName - isAlreadyPK', attributeName, isAlreadyPK);
                     if (isAlreadyPK) continue;
 
                     const compositeElementClassList = document.getElementById(`${tableName}-${attribute}-pk`).classList;
@@ -602,7 +595,6 @@ function constraintsHandler(e) {
 
                     compositeElementClassList.add(COLOR_CLASS_NAME);
                     attributeState[tableName][attribute][targetKey] = true;
-                    // console.log(attributeState);
                 }
             }
         }
@@ -612,6 +604,17 @@ function constraintsHandler(e) {
         }
     }
     drawSQLScript();
+}
+function scrollToSQL(e) {
+    const [tableName, attributeName] = e.target.id.split('-');
+
+    const sqlContainer = document.getElementById('sqlContainer');
+    const sqlTextContainer = document.getElementById('sqlTextContainer');
+    const children = Array.from(sqlTextContainer.children);
+
+    const targetCreateStatement = document.getElementById(`${tableName}-${attributeName}-create`);
+    const targetIndex = children.indexOf(targetCreateStatement);
+    sqlContainer.scrollTo({ top: targetIndex * 28, behavior: 'smooth' });
 }
 
 function scrollToExcellTablePosition(element) {
@@ -653,7 +656,6 @@ function checkEntityIntegrityConstraint(tableName, attributeName) {
     //dup check
     pushTableCompositeKeyState(tableName, attributeName);
     const keyCount = tableCompositeKeyState[tableName].length;
-    console.log("attributeName, keyCount", attributeName, keyCount);
 
     if (keyCount === 1) {
         for (const tuple of targetTableDataArray) {

@@ -22,7 +22,7 @@ function drawSQLScript(isExport = false) {
             if (targetAttribute.default) otherConstaints += createDefaultString(targetAttribute.dataType, targetAttribute.default);
             if (targetAttribute.notnull) otherConstaints += otherConstaints.length > 0 ? " NOT NULL" : "NOT NULL";
             if (targetAttribute.unique) otherConstaints += otherConstaints.length > 0 ? " UNIQUE" : "UNIQUE";
-            div.appendChild(createCreateStatementAttribute(attributeName, attributeDataType, otherConstaints));
+            div.appendChild(createCreateStatementAttribute(attributeName, attributeDataType, otherConstaints, tableName));
             if (isPK) pkNameList.push(attribute);
             if (isFK && isFK !== true) {
                 const fkobj = {};
@@ -96,9 +96,10 @@ function createCreateStatementEnd() {
     return p;
 }
 
-function createCreateStatementAttribute(attributename, datatype, otherConstaints) {
+function createCreateStatementAttribute(attributename, datatype, otherConstaints, tableName) {
     const p = generateStatementElement();
     p.innerText = `\t${attributename.toUpperCase()}\t${datatype}${otherConstaints.length > 0 ? `\t` : ""}${otherConstaints},`;
+    p.id = `${tableName}-${attributename}-create`;
     return p;
 }
 
