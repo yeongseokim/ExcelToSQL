@@ -31,13 +31,64 @@ select {
     padding: 10px;
 }
 
+td[rowspan="2"] {
+    min-width: 70px;
+}
+
 .dropdown {
     max-width: 120px;
     border-color: var(--gray-light0);
 }
 
-@media (max-width:1270px) {
+.otherConstraints {
+    font-size: 0.5rem;
+}
+
+.otherConstraints label {
+    margin-right: 5px;
+}
+
+.defaultText {
+    width: 70px;
+    height: 10px;
+    border: 0.5px solid var(--gray-light0);
+    font-size: 0.5rem;
+}
+
+.defaultText::placeholder {
+    color: var(--gray-light0);
+}
+
+@media screen and (max-width: 1220px) and (min-width: 1149px) {
     .dropdown {
-        max-width: 40%;
+        max-width: 6vw;
+    }
+
+    .defaultText {
+        width: auto;
+    }
+
+    .defaultText {
+        width: 40px;
+    }
+}
+
+@media (max-width:1150px) {
+    .dropdown {
+        max-width: 70px;
+    }
+
+    .tdFKDropdown {
+        max-width: 100px;
+    }
+
+    .defaultText {
+        width: 30px;
+    }
+}
+
+@media (min-width: 1300px) {
+    .attributeList td {
+        padding-left: 1vw;
     }
 }

@@ -3,6 +3,7 @@ let excelState = {};
 let sheetNamesState = [];
 let attributeState = {};
 let tableDependencyState = {};
+let tableCompositeKeyState = {};
 let currentOpenSheetState = [];
 const DATATYPE_UNNEED_LENGTH = ['INT', 'DATE', 'BOOLEAN', 'TIME', 'DATETIME', 'TIMESTAMP', 'YEAR'];
 const DATATYPE_CAN_HAVE_LENGTH = ['BIGINT', 'TINYINT', 'SMALLINT', 'MEDIUMINT', 'FLOAT', 'DOUBLE'];
@@ -70,6 +71,7 @@ function makeAttributeObject() {
     for (const table of tableNames) {
         attributeState[table] = {};
         tableDependencyState[table] = [];
+        tableCompositeKeyState[table] = [];
         const firstAttriObj = excelState[table][0];
         const attributes = Object.keys(firstAttriObj);
         for (const attribute of attributes) {
@@ -79,6 +81,9 @@ function makeAttributeObject() {
             attributeState[table][attribute].pk = false;
             attributeState[table][attribute].fk = false;
             attributeState[table][attribute].selectLength = false;
+            attributeState[table][attribute].notnull = false;
+            attributeState[table][attribute].unique = false;
+            attributeState[table][attribute].default = false;
 
             if (DATATYPE_UNNEED_LENGTH.includes(attributeState[table][attribute].dataType) || DATATYPE_CAN_HAVE_LENGTH.includes(attributeState[table][attribute].dataType)) attributeState[table][attribute].isDataTypeSpecified = false;
             else attributeState[table][attribute].isDataTypeSpecified = true;
@@ -294,6 +299,7 @@ function editName(e) {
         editSheetNamesState(preName, editedName);
         editTableDependencyState(preName, editedName);
         editOpenSheetState(preName, editedName);
+        editCompositeKeyState(preName, editedName);
         e.target.id = editedName;
 
         drawSheetNames();
@@ -348,7 +354,11 @@ function editOpenSheetState(preName, newName) {
     const index = currentOpenSheetState.indexOf(preName);
     if (index === -1) return;
     currentOpenSheetState[index] = newName;
-    console.log(currentOpenSheetState);
+}
+
+function editCompositeKeyState(preName, editedName) {
+    tableCompositeKeyState[editedName] = [...tableCompositeKeyState[preName]];
+    delete tableCompositeKeyState[preName];
 }
 
 function createSheetContainerAttributeList(sheetName) {
@@ -365,7 +375,6 @@ function createSheetContainerAttributeList(sheetName) {
     attributeBox.style.display = "none";
 
     const attributes = Object.keys(targetTable);
-    const rowspan = attributes.length;
 
     for (const attribute of attributes) {
         const targetObject = targetTable[attribute];
@@ -374,7 +383,7 @@ function createSheetContainerAttributeList(sheetName) {
 
         const tdName = document.createElement("td"); //이름 열에는 키
         tdName.innerText = attribute;
-        // tdName.rowSpan = 2;
+        tdName.rowSpan = 2;
         attributeList.appendChild(tdName);
         attributeList.classList.add("attributeList");
 
@@ -403,32 +412,52 @@ function createSheetContainerAttributeList(sheetName) {
         isForeignKey.addEventListener("click", fkHandler);
         constraintsForeignKey.appendChild(isForeignKey);
 
+        const tdFKDropdown = createDropdownTd(`${sheetName}-${attribute}-ref`);
+        tdFKDropdown.classList.add("tdFKDropdown");
+
         attributeList.appendChild(tdName);
         attributeList.appendChild(tdDataType);
         attributeList.appendChild(constraintsPrimaryKey);
         attributeList.appendChild(constraintsForeignKey);
+        attributeList.appendChild(tdFKDropdown);
 
-        // const constraintsList = document.createElement("tr");
-        // const tdNOTNULL = createCheckElement(sheetName, attribute, "notnull");
-        // const tdUNIQUE = createCheckElement(sheetName, attribute, "unique");
-        // const tdDEFAULT = createCheckElement(sheetName, attribute, "default");
-        // constraintsList.appendChild(tdNOTNULL);
-        // constraintsList.appendChild(tdUNIQUE);
-        // constraintsList.appendChild(tdDEFAULT);
+        const constraintsList = document.createElement("tr");
+        const tdConstraints = document.createElement("td");
+        tdConstraints.id = `${sheetName}-${attribute}-otherConstaints`;
+        tdConstraints.classList.add("otherConstraints");
+        tdConstraints.colSpan = 4;
+        const tdNOTNULL = createCheckElement(sheetName, attribute, "notnull");
+        const tdUNIQUE = createCheckElement(sheetName, attribute, "unique");
+        const tdDEFAULT = createCheckElement(sheetName, attribute, "default");
+        const inputTextSpan = document.createElement("input");
+        inputTextSpan.id = `${sheetName}-${attribute}-defaultText`;
+        inputTextSpan.classList.add("defaultText");
+        inputTextSpan.type = "text";
+        inputTextSpan.addEventListener("keydown", enterDefaultText);
+        const defaultValue = attributeState[sheetName][attribute].default;
+        inputTextSpan.style.visibility = defaultValue ? "visible" : "hidden";
+        inputTextSpan.placeholder = "enter";
+        inputTextSpan.value = defaultValue ? defaultValue : "";
+
+        tdConstraints.appendChild(tdNOTNULL);
+        tdConstraints.appendChild(tdUNIQUE);
+        tdConstraints.appendChild(tdDEFAULT);
+        tdConstraints.appendChild(inputTextSpan);
+        constraintsList.appendChild(tdConstraints);
 
         attributeBox.appendChild(attributeList);
-        // attributeBox.appendChild(constraintsList);
+        attributeBox.appendChild(constraintsList);
     }
     return attributeBox
 }
 
 function createCheckElement(sheetName, attribute, labelText) {
-    const td = document.createElement("td");
     const idAndLabel = `${sheetName}-${attribute}-${labelText}`;
 
     const input = document.createElement("input");
     input.type = "checkbox";
     input.id = idAndLabel;
+    input.checked = attributeState[sheetName][attribute][labelText];
     input.addEventListener("change", attributeCheckBoxClick);
 
     const label = document.createElement("label");
@@ -437,13 +466,34 @@ function createCheckElement(sheetName, attribute, labelText) {
     label.appendChild(input);
     label.appendChild(textNode);
 
-    td.appendChild(label);
-
-    return td;
+    return label;
 }
 
-function attributeCheckBoxClick() {
+function attributeCheckBoxClick(e) {
+    const [tableName, attributeName, targetConstraint] = e.target.id.split('-');
+    const isChecked = e.target.checked;
+    if (targetConstraint === "default") {
+        const input = document.getElementById(`${tableName}-${attributeName}-defaultText`)
+        input.style.visibility = isChecked ? "visible" : "hidden";
+        if (!isChecked) {
+            attributeState[tableName][attributeName][targetConstraint] = isChecked;
+            drawSQLScript();
+        }
+        return;
+    }
+    attributeState[tableName][attributeName][targetConstraint] = isChecked;
+    console.log(attributeState);
+    drawSQLScript();
+}
 
+function enterDefaultText(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const [tableName, attributeName,] = e.target.id.split('-');
+        attributeState[tableName][attributeName]["default"] = e.target.value;
+        drawSQLScript();
+        console.log(attributeState);
+    }
 }
 
 function determineDataTypeView(targetObj) {
@@ -591,16 +641,9 @@ function deleteDependency(tableName, attributeName, targetKey) {
 
 function fkHandler(e) {
     const [tableName, attributeName, attributeKey] = e.target.id.split("-");
-    const tr = document.getElementById(`${tableName}-${attributeName}`);
 
-    if (attributeState[tableName][attributeName].fk) {
-        const td = createDropdownTd(`${tableName}-${attributeName}-ref`);
-        tr.appendChild(td);
-        return;
-    } else {
-        const td = document.getElementById(`${tableName}-${attributeName}-ref`);
-        tr.removeChild(td);
-    }
+    const select = document.querySelector(`#${tableName}-${attributeName}-ref select`);
+    select.style.visibility = attributeState[tableName][attributeName].fk ? "visible" : "hidden";
 }
 
 function drawReferecingSelect() {
@@ -613,9 +656,8 @@ function drawReferecingSelect() {
             if (!fkState) continue;
             if (document.getElementById(tdId)) continue;
 
-            const tr = document.getElementById(`${tableName}-${attribute}`)
-            const td = createDropdownTd(tdId);
-            tr.appendChild(td);
+            const select = document.querySelector(`#${tableName}-${attribute}-ref select`);
+            select.style.visibility = "visible";
 
             if (fkState !== true) {
                 const option = tr.querySelector(`option[value="${fkState}"]`);
@@ -654,6 +696,7 @@ function createDropdown() {
     }
 
     select.addEventListener('change', setFK);
+    select.style.visibility = "hidden";
 
     return select;
 }

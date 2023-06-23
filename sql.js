@@ -13,11 +13,16 @@ function drawSQLScript(isExport = false) {
         let pkNameList = [];
         let fkObjList = [];
         for (const attribute of attributeList) {
+            const targetAttribute = table[attribute];
             const attributeName = attribute;
-            const attributeDataType = determineDataTypeView(table[attribute]);
-            const isPK = table[attribute].pk;
-            const isFK = table[attribute].fk;
-            div.appendChild(createCreateStatementAttribute(attributeName, attributeDataType));
+            const attributeDataType = determineDataTypeView(targetAttribute);
+            const isPK = targetAttribute.pk;
+            const isFK = targetAttribute.fk;
+            let otherConstaints = "";
+            if (targetAttribute.default) otherConstaints += createDefaultString(targetAttribute.dataType, targetAttribute.default);
+            if (targetAttribute.notnull) otherConstaints += otherConstaints.length > 0 ? " NOT NULL" : "NOT NULL";
+            if (targetAttribute.unique) otherConstaints += otherConstaints.length > 0 ? " UNIQUE" : "UNIQUE";
+            div.appendChild(createCreateStatementAttribute(attributeName, attributeDataType, otherConstaints));
             if (isPK) pkNameList.push(attribute);
             if (isFK && isFK !== true) {
                 const fkobj = {};
@@ -91,10 +96,17 @@ function createCreateStatementEnd() {
     return p;
 }
 
-function createCreateStatementAttribute(attributename, datatype) {
+function createCreateStatementAttribute(attributename, datatype, otherConstaints) {
     const p = generateStatementElement();
-    p.innerText = `\t${attributename.toUpperCase()}\t${datatype},`;
+    p.innerText = `\t${attributename.toUpperCase()}\t${datatype}${otherConstaints.length > 0 ? `\t` : ""}${otherConstaints},`;
     return p;
+}
+
+function createDefaultString(datatype, defaultValue) {
+    if (defaultValue.toString().toUpperCase() === "NULL") return `DEFAULT NULL`;
+    if (DATATYPE_INT.includes(datatype)) return `DEFAULT ${parseInt(defaultValue)}`;
+    if (DATATYPE_FLOAT.includes(datatype)) return `DEFAULT ${parseFloat(defaultValue)}`;
+    return `DEFAULT '${defaultValue}'`;
 }
 
 function createCreateStatementPrimaryKey(keyAttributeList) {
