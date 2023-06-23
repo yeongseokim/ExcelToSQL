@@ -92,6 +92,11 @@
     color: #ebebeb;
 }
 
+.constraintsButton.problemButton {
+    background-color: #ffbb00;
+    color: #ebebeb;
+}
+
 #PKFKDesc {
     display: grid;
     font-size: 0.7rem;
@@ -104,4 +109,8 @@
 .toggleButton.sheetButton:first-of-type>#PKFKDesc {
     flex-grow: 1;
     text-align: right;
+}
+
+#excelTable td.unvalidData {
+    border: 2px solid #F65353;
 }

@@ -563,7 +563,9 @@ function editDataType(e) {
 
 function constraintsHandler(e) {
     const COLOR_CLASS_NAME = "selectedButton";
+    const PROBLEM_CLASS_NAME = "problemButton";
     const targetClassList = e.target.classList;
+
     const [tableName, attributeName, targetKey] = e.target.id.split("-");
     if (targetClassList.contains(COLOR_CLASS_NAME)) {
         targetClassList.remove(COLOR_CLASS_NAME);
@@ -571,47 +573,114 @@ function constraintsHandler(e) {
         attributeState[tableName][attributeName][targetKey] = false;
     }
     else {
-        //if (!checkEntityIntegrityConstraint(tableName, attributeName, targetKey)) return;
-        targetClassList.add(COLOR_CLASS_NAME);
-        attributeState[tableName][attributeName][targetKey] = true;
+        if (targetKey === 'pk') {
+            console.log('pk신청');
+            if (targetClassList.contains(PROBLEM_CLASS_NAME)) {
+                targetClassList.remove(PROBLEM_CLASS_NAME);
+                popTableCopmositeKeyState(tableName, attributeName);
+                return;
+            }
+            const keyCheck = checkEntityIntegrityConstraint(tableName, attributeName);
+            console.log('attributeName - keyCheck', attributeName, keyCheck);
+            console.log(tableCompositeKeyState);
+            if (keyCheck === 'null') return;
+            if (keyCheck === false) {
+                targetClassList.add(PROBLEM_CLASS_NAME);
+                return;
+            }
+            if (keyCheck === true) {
+                const primaryKeyAttributeList = tableCompositeKeyState[tableName];
+                for (const attribute of primaryKeyAttributeList) {
+                    console.log('전부 pk=true를 해줘야 함', attribute);
+                    const isAlreadyPK = attributeState[tableName][attribute][targetKey];
+                    console.log('attributeName - isAlreadyPK', attributeName, isAlreadyPK);
+                    if (isAlreadyPK) continue;
+
+                    const compositeElementClassList = document.getElementById(`${tableName}-${attribute}-pk`).classList;
+
+                    if (compositeElementClassList.contains(PROBLEM_CLASS_NAME)) compositeElementClassList.remove(PROBLEM_CLASS_NAME);
+
+                    compositeElementClassList.add(COLOR_CLASS_NAME);
+                    attributeState[tableName][attribute][targetKey] = true;
+                    // console.log(attributeState);
+                }
+            }
+        }
+        else {
+            targetClassList.add(COLOR_CLASS_NAME);
+            attributeState[tableName][attributeName][targetKey] = true;
+        }
     }
     drawSQLScript();
 }
 
-function checkEntityIntegrityConstraint(tableName, attributeName, targetKey) {
-    if (targetKey === 'fk') return true;
+function scrollToExcellTablePosition(element) {
+    const excelTable = document.getElementById("excelBehind");
+    const rect = element.getBoundingClientRect();
+    excelTable.scrollTop = rect.top + rect.height;
+}
 
+function pushTableCompositeKeyState(tableName, attributeName) {
+    if (tableCompositeKeyState[tableName].includes(attributeName)) return;
+    tableCompositeKeyState[tableName].push(attributeName);
+}
+
+function popTableCopmositeKeyState(tableName, attributeName) {
+    const targetState = tableCompositeKeyState[tableName];
+    const index = targetState.indexOf(attributeName);
+    if (index === -1) return;
+    tableCompositeKeyState[tableName] = [...targetState.slice(0, index), ...targetState.slice(index + 1)];
+}
+
+function checkEntityIntegrityConstraint(tableName, attributeName) {
+    drawTable(tableName);
     const targetTableDataArray = excelState[tableName];
     let duplicateCheckArray = [];
+
+    //null check
     for (const tuple of targetTableDataArray) {
         const targetData = tuple[attributeName];
-        const currentindex = targetTableDataArray.indexOf(tuple);
-        const duplicateIndex = duplicateCheckArray.indexOf(targetData);
         if (targetData.toString().toUpperCase() === "NULL") {
+            const targetElement = document.getElementById(`${tableName}-${currentindex}-${attributeName}-data`);
+            const currentindex = targetTableDataArray.indexOf(tuple);
+            targetElement.classList.add("unvalidData");
+            scrollToExcellTablePosition(targetElement);
             alert(ERROR_PRIMARY_KEY_CONSTRAINT_NULL(currentindex));
-            return false;
+            return 'null';
         };
-        if (duplicateCheckArray.includes(targetData)) {
-            alert(ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE(duplicateIndex, currentindex, targetData));
-            return false;
-        }
-        duplicateCheckArray.push(targetData);
     }
+
+    //dup check
+    pushTableCompositeKeyState(tableName, attributeName);
+    const keyCount = tableCompositeKeyState[tableName].length;
+    console.log("attributeName, keyCount", attributeName, keyCount);
+
+    if (keyCount === 1) {
+        for (const tuple of targetTableDataArray) {
+            const targetData = tuple[attributeName];
+            const currentindex = targetTableDataArray.indexOf(tuple);
+            const duplicateIndex = duplicateCheckArray.indexOf(targetData);
+            if (duplicateCheckArray.includes(targetData)) {
+                const targetElement = document.getElementById(`${tableName}-${currentindex}-${attributeName}-data`);
+                const dupElement = document.getElementById(`${tableName}-${duplicateIndex}-${attributeName}-data`);
+                targetElement.classList.add("unvalidData");
+                dupElement.classList.add("unvalidData");
+                scrollToExcellTablePosition(dupElement);
+                return false;
+            }
+            duplicateCheckArray.push(targetData);
+        }
+    }
+    else {
+        return checkCompositeKey(tableName);
+    }
+
     return true;
 }
 
-function getPrimaryKeyAttributeList(tableName) {
-    const targetTable = attributeState[tableName]
-    const sameTableAttributeList = Object.keys(targetTable);
-    let primaryKeyAttributeList = [];
-    for (const attribute of sameTableAttributeList) {
-        if (targetTable[attribute].pk) primaryKeyAttributeList.push(attribute);
-    }
-    return primaryKeyAttributeList;
-}
-
-function checkCompositeKey(tableName, primaryKeyAttributeList) {
+function checkCompositeKey(tableName) {
     const targetTable = excelState[tableName];
+    const primaryKeyAttributeList = tableCompositeKeyState[tableName];
     let duplicateCheckArray = [];
     for (const tuple of targetTable) {
         let compositeKey = "";
@@ -622,13 +691,23 @@ function checkCompositeKey(tableName, primaryKeyAttributeList) {
             const currentindex = targetTable.indexOf(tuple);
             const duplicateIndex = duplicateCheckArray.indexOf(compositeKey);
             const statement = compositeKey.slice(0, -1);
+
+            const compositeList = statement.split('-');
+            for (const attribute of compositeList) {
+                const targetElement = document.getElementById(`${tableName}-${currentindex}-${attribute}-data`);
+                const dupElement = document.getElementById(`${tableName}-${duplicateIndex}-${attribute}-data`);
+                targetElement.classList.add("unvalidData");
+                dupElement.classList.add("unvalidData");
+                scrollToExcellTablePosition(dupElement);
+            }
             alert(ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE(duplicateIndex, currentindex, statement));
+            return false;
         }
         duplicateCheckArray.push(compositeKey);
     }
-
+    return true;
 }
-
+// ///////////////////////////////////////////////////////////////////////
 function deleteDependency(tableName, attributeName, targetKey) {
     if (targetKey === 'pk') return;
     if (attributeState[tableName][attributeName][targetKey] === true) return;
