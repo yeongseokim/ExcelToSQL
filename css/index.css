@@ -48,7 +48,7 @@ header {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     display: flex;
     justify-content: space-between;
-    background-image: url('triangles-1430105.svg');
+    background-image: url('../img/triangles-1430105.svg');
     background-size: cover;
     background-blend-mode: overlay;
 }
