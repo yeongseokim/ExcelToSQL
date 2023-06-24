@@ -135,19 +135,23 @@ function createCreateStatementForeignKey(fkobj) {
 function createInsertStatement(tableName, valueObj) {
     const p = generateStatementElement();
     const attrs = Object.keys(valueObj);
-    let statement = `INSERT INTO ${tableName.toUpperCase()} VALUES(`;
+    let attrStatement = `INSERT INTO ${tableName.toUpperCase()} (`;
+    let statement = `VALUES(`;
 
     for (const attr of attrs) {
+        attrStatement += attr + ', ';
         const dataType = attributeState[tableName][attr].dataType;
         let data = valueObj[attr];
+        if (data.toString().toUpperCase() === 'NULL') { statement += data + ", "; continue; }
         if (dataType === "DATE" && countDigits(data.toString()) !== 8) data = extractYYYYMMDD(data);
         if (dataType === "TIME") data = extractHHMM(data % 1);
         if (dataType === "DATETIME") data = `${extractYYYYMMDD(Math.floor(data))} ${extractHHMM(data % 1)}`;
         if (DATATYPE_STRING_INPUT_TYPE.includes(dataType)) data = `'${data}'`;
         statement += data + ", ";
     }
+    attrStatement = attrStatement.slice(0, -2) + ') ';
     statement = statement.slice(0, -2) + `);`;
-    p.innerText = statement;
+    p.innerText = attrStatement + statement;
     return p;
 }
 

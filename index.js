@@ -22,8 +22,8 @@ const ERROR_UNVALID_DATATYPE_MESSAGE = `유효하지 않은 데이터타입입�
 const ERROR_UNVALID_LENGTH_DATATYPE_MESSAGE = (maxLength) => {
     return `유효하지 않은 데이터 길이입니다.\n존재하는 데이터보다 작은 길이를 입력할 수 없습니다. ${maxLength}보다 큰 값을 입력하거나 데이터 테이블을 수정하세요.`;
 }
-const ERROR_PRIMARY_KEY_CONSTRAINT_NULL = (index) => `기본 키에는 NULL 값이 올 수 없습니다.\n데이터 테이블 ${index + 1}번째 행에서 NULL 값을 수정하고 다시 시도하세요.`;
-const ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE = (dupindex, curindex, key) => `기본 키 값은 중복될 수 없습니다.\n데이터 테이블 ${dupindex + 1}, ${curindex + 1}번째 행에서 키 ${key}에 대한 중복 값을 수정하고 다시 시도하세요.`;
+const ERROR_PRIMARY_KEY_CONSTRAINT_NULL = (index) => `NULL 값이 있습니다.\n데이터 테이블 ${index + 1}번째 행에서 NULL 값을 수정하고 다시 시도하세요.`;
+const ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE = (dupindex, curindex, key) => `중복 값이 있습니다.\n데이터 테이블 ${dupindex + 1}, ${curindex + 1}번째 행에서 키 ${key}에 대한 중복 값을 수정하고 다시 시도하세요.`;
 
 /* File */
 document.addEventListener('DOMContentLoaded', function () {
@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', function () {
     excelFileInput.addEventListener('change', function (e) {
         const file = e.target;
         const reader = new FileReader();
+        initAllStates();
 
         reader.onload = function (e) {
             const data = reader.result;
@@ -55,6 +56,15 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 });
+
+function initAllStates() {
+    excelState = {};
+    sheetNamesState = [];
+    attributeState = {};
+    tableDependencyState = {};
+    tableCompositeKeyState = {};
+    currentOpenSheetState = [];
+}
 
 function makeExcelObject(workBook, sheetNames) {
     sheetNames.forEach(function (sheetName) {
@@ -104,6 +114,7 @@ function searchMaxLength() {
         for (const attribute of attributes) {
             let currentMaxLength = 0;
             for (let i = 0; i < targetTable.length; i++) {
+                if (typeof (targetTable[i][attribute]) === 'undefined') continue;
                 const targetData = targetTable[i][attribute].toString().length;
                 currentMaxLength = Math.max(currentMaxLength, targetData);
             }
@@ -151,25 +162,36 @@ function editTableData(e) {
         document.activeElement.blur();
 
         const [tableName, arrayIndex, attributeName] = e.target.id.split('-');
+        const targetObj = attributeState[tableName][attributeName];
         let editedData = e.target.innerText;
         const editedLength = editedData.length;
-        const dataType = attributeState[tableName][attributeName].dataType;
-        const pk = attributeState[tableName][attributeName].pk;
-        const isNull = (editedData.toUpperCase() === "NULL");
+        const dataType = targetObj.dataType;
+        const pk = targetObj.pk;
+        const isNull = (editedData.toUpperCase() === "NULL") || (editedData === "");
+
+        if (isNull && !(pk || targetObj.notnull)) {
+            delete excelState[tableName][arrayIndex][attributeName];
+            return drawSQLScript();
+        }
 
         editedData = getDataByDataTypeSettings(dataType, editedData);
+        if (isNaN(editedData)) {
+            alert('유효하지 않은 데이터입니다. 숫자 데이터를 입력하세요.');
+            e.target.innerText = excelState[tableName][arrayIndex][attributeName];
+        }
 
-        if (pk) {
-            if (isNull) {
-                alert(ERROR_PRIMARY_KEY_CONSTRAINT_NULL(arrayIndex).slice(0, 24));
-                e.target.innerText = excelState[tableName][arrayIndex][attributeName];
-                return;
-            }
+        if (isNull && (pk || targetObj.notnull)) {
+            alert("NULL 값이 올 수 없습니다.\n기본 키나 NOT NULL 설정을 확인하세요.");
+            e.target.innerText = excelState[tableName][arrayIndex][attributeName];
+            return;
+        }
+
+        if (pk || targetObj.unique) {
             const targetTableDataArray = excelState[tableName];
             for (const dataObj of targetTableDataArray) {
                 const targetData = dataObj[attributeName];
                 if (editedData === targetData) {
-                    alert(ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE("", "", "").slice(0, 19));
+                    alert("중복 값이 올 수 없습니다.\n기본 키나 UNIQUE 설정을 확인하세요.");
                     e.target.innerText = excelState[tableName][arrayIndex][attributeName];
                     return;
                 }
@@ -178,11 +200,8 @@ function editTableData(e) {
 
         excelState[tableName][arrayIndex][attributeName] = editedData;
 
-        if (editedLength > attributeState[tableName][attributeName].maxLength) {
-            searchMaxLength();
-            drawSheetNames();
-        }
-
+        searchMaxLength();
+        drawSheetNames();
         drawSQLScript();
     }
 }
@@ -481,6 +500,23 @@ function attributeCheckBoxClick(e) {
         }
         return;
     }
+    if (isChecked && targetConstraint === "unique") {
+        const isUnique = checkUniqueColumn(tableName, attributeName);
+        if (!isUnique) {
+            e.target.checked = false;
+            return;
+        };
+        drawTable(tableName);
+    }
+    if (isChecked && targetConstraint === "notnull" && !attributeState[tableName][attributeName].default) {
+        const isNotNull = checkNotNullColumn(tableName, attributeName);
+        console.log(isNotNull);
+        if (!isNotNull) {
+            e.target.checked = false;
+            return;
+        };
+        drawTable(tableName);
+    }
     attributeState[tableName][attributeName][targetConstraint] = isChecked;
     drawSQLScript();
 }
@@ -572,7 +608,7 @@ function constraintsHandler(e) {
         if (targetKey === 'pk') {
             popTableCopmositeKeyState(tableName, attributeName);
             const keyCount = tableCompositeKeyState[tableName].length;
-            if (keyCount === 0) return;
+            if (keyCount === 0) return drawSQLScript();
 
             const tableCompositeKey = [...tableCompositeKeyState[tableName]];
             tableCompositeKeyState[tableName] = [];
@@ -657,45 +693,52 @@ function popTableCopmositeKeyState(tableName, attributeName) {
 function checkEntityIntegrityConstraint(tableName, attributeName) {
     drawTable(tableName);
     const targetTableDataArray = excelState[tableName];
-    let duplicateCheckArray = [];
 
     //null check
-    for (const tuple of targetTableDataArray) {
-        const targetData = tuple[attributeName];
-        if (targetData.toString().toUpperCase() === "NULL") {
-            const targetElement = document.getElementById(`${tableName}-${currentindex}-${attributeName}-data`);
-            const currentindex = targetTableDataArray.indexOf(tuple);
-            targetElement.classList.add("unvalidData");
-            scrollToExcellTablePosition(targetElement);
-            alert(ERROR_PRIMARY_KEY_CONSTRAINT_NULL(currentindex));
-            return 'null';
-        };
-    }
+    if (!checkNotNullColumn(tableName, attributeName)) return 'null';
 
     //dup check
     pushTableCompositeKeyState(tableName, attributeName);
     const keyCount = tableCompositeKeyState[tableName].length;
 
-    if (keyCount === 1) {
-        for (const tuple of targetTableDataArray) {
-            const targetData = tuple[attributeName];
-            const currentindex = targetTableDataArray.indexOf(tuple);
-            const duplicateIndex = duplicateCheckArray.indexOf(targetData);
-            if (duplicateCheckArray.includes(targetData)) {
-                const targetElement = document.getElementById(`${tableName}-${currentindex}-${attributeName}-data`);
-                const dupElement = document.getElementById(`${tableName}-${duplicateIndex}-${attributeName}-data`);
-                targetElement.classList.add("unvalidData");
-                dupElement.classList.add("unvalidData");
-                scrollToExcellTablePosition(dupElement);
-                return false;
-            }
-            duplicateCheckArray.push(targetData);
-        }
-    }
-    else {
-        return checkCompositeKey(tableName);
-    }
+    if (keyCount === 1) return checkUniqueColumn(tableName, attributeName);
+    else return checkCompositeKey(tableName);
+}
 
+function checkNotNullColumn(tableName, attributeName) {
+    const targetTableDataArray = excelState[tableName];
+    for (const tuple of targetTableDataArray) {
+        const targetData = tuple[attributeName];
+        if (typeof (targetData) === 'undefined' || targetData.toString().toUpperCase() === "NULL") {
+            const currentindex = targetTableDataArray.indexOf(tuple);
+            const targetElement = document.getElementById(`${tableName}-${currentindex}-${attributeName}-data`);
+            targetElement.classList.add("unvalidData");
+            scrollToExcellTablePosition(targetElement);
+            alert(ERROR_PRIMARY_KEY_CONSTRAINT_NULL(currentindex));
+            return false;
+        };
+    }
+    return true;
+}
+
+function checkUniqueColumn(tableName, attributeName) {
+    const targetTableDataArray = excelState[tableName];
+    let duplicateCheckArray = [];
+
+    for (const tuple of targetTableDataArray) {
+        const targetData = tuple[attributeName];
+        const currentindex = targetTableDataArray.indexOf(tuple);
+        const duplicateIndex = duplicateCheckArray.indexOf(targetData);
+        if (duplicateCheckArray.includes(targetData)) {
+            const targetElement = document.getElementById(`${tableName}-${currentindex}-${attributeName}-data`);
+            const dupElement = document.getElementById(`${tableName}-${duplicateIndex}-${attributeName}-data`);
+            targetElement.classList.add("unvalidData");
+            dupElement.classList.add("unvalidData");
+            scrollToExcellTablePosition(dupElement);
+            return false;
+        }
+        duplicateCheckArray.push(targetData);
+    }
     return true;
 }
 
