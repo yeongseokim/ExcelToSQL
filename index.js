@@ -569,6 +569,25 @@ function constraintsHandler(e) {
         targetClassList.remove(COLOR_CLASS_NAME);
         deleteDependency(tableName, attributeName, targetKey);
         attributeState[tableName][attributeName][targetKey] = false;
+        if (targetKey === 'pk') {
+            popTableCopmositeKeyState(tableName, attributeName);
+            const keyCount = tableCompositeKeyState[tableName].length;
+            if (keyCount === 0) return;
+
+            const tableCompositeKey = [...tableCompositeKeyState[tableName]];
+            tableCompositeKeyState[tableName] = [];
+            for (const attr of tableCompositeKey) {
+                const targetAttrElement = document.getElementById(`${tableName}-${attr}-pk`);
+                targetAttrElement.classList.remove(COLOR_CLASS_NAME);
+                attributeState[tableName][attr].pk = false;
+            }
+            for (const attr of tableCompositeKey) {
+                const targetAttrElement = document.getElementById(`${tableName}-${attr}-pk`);
+                constraintsHandler({
+                    target: targetAttrElement
+                });
+            }
+        }
     }
     else {
         if (targetKey === 'pk') {
