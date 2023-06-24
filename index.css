@@ -48,6 +48,9 @@ header {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     display: flex;
     justify-content: space-between;
+    background-image: url('triangles-1430105.svg');
+    background-size: cover;
+    background-blend-mode: overlay;
 }
 
 a {
@@ -79,6 +82,13 @@ footer {
 footer span {
     padding: 0px 50px;
     color: var(--background-dark);
+    font-size: 0.8rem;
+}
+
+footer i {
+    font-size: 1rem;
+    position: relative;
+    bottom: -3px;
 }
 
 main {
