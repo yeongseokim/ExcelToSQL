@@ -5,6 +5,7 @@ let attributeState = {};
 let tableDependencyState = {};
 let tableCompositeKeyState = {};
 let currentOpenSheetState = [];
+const LOCALKEY = "@ExcellenToSQL-@YEONGSEOKIM";
 const DATATYPE_UNNEED_LENGTH = ['INT', 'DATE', 'BOOLEAN', 'TIME', 'DATETIME', 'TIMESTAMP', 'YEAR'];
 const DATATYPE_CAN_HAVE_LENGTH = ['BIGINT', 'TINYINT', 'SMALLINT', 'MEDIUMINT', 'FLOAT', 'DOUBLE'];
 const DATATYPE_NEED_LENGTH = ['CHAR', 'VARCHAR', 'BLOB', 'TEXT', 'TINYTEXT', 'LONGTEXT', 'MEDIUMTEXT', 'ENUM', 'DECIMAL'];
@@ -27,6 +28,15 @@ const ERROR_PRIMARY_KEY_CONSTRAINT_NOT_UNIQUE = (dupindex, curindex, key) => `�
 
 /* File */
 document.addEventListener('DOMContentLoaded', function () {
+    const stateData = localStorage.getItem(LOCALKEY);
+    if (stateData) {
+        [excelState, sheetNamesState, attributeState, tableDependencyState, tableCompositeKeyState, currentOpenSheetState] = JSON.parse(stateData);
+        drawSheetNames();
+        drawTable(sheetNamesState[0]);
+        determineSQLContainerHeight(100);
+        drawSQLScript();
+    }
+
     const excelFileInput = document.getElementById('file');
 
     excelFileInput.addEventListener('change', function (e) {
@@ -47,15 +57,23 @@ document.addEventListener('DOMContentLoaded', function () {
             drawTable(sheetNamesState[0]); //Default로 첫 번째 시트를 열음
             determineSQLContainerHeight(100);
             drawSQLScript();
-
-            console.log(excelState);
-            console.log(sheetNamesState);
-            console.log(attributeState);
         };
         reader.readAsBinaryString(file.files[0]);
     });
 
+    const reset = document.getElementById('reset');
+    reset.addEventListener('click', deleteStateData)
+
 });
+
+function deleteStateData() {
+    localStorage.removeItem(LOCALKEY);
+}
+
+function savaStateData() {
+    const saveForm = [excelState, sheetNamesState, attributeState, tableDependencyState, tableCompositeKeyState, currentOpenSheetState];
+    localStorage.setItem(LOCALKEY, JSON.stringify(saveForm));
+}
 
 function initAllStates() {
     excelState = {};

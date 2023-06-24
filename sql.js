@@ -48,6 +48,7 @@ function drawSQLScript(isExport = false) {
         div.insertAdjacentHTML('beforeend', `<br>`);
     }
     sqlContainer.appendChild(div);
+    savaStateData();
 }
 
 function getTableOrder() {
