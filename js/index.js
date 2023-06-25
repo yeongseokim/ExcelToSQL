@@ -193,7 +193,7 @@ function editTableData(e) {
         }
 
         editedData = getDataByDataTypeSettings(dataType, editedData);
-        if (isNaN(editedData)) {
+        if (!DATATYPE_STRING_INPUT_TYPE.includes(dataType) && isNaN(editedData)) {
             alert('유효하지 않은 데이터입니다. 숫자 데이터를 입력하세요.');
             e.target.innerText = excelState[tableName][arrayIndex][attributeName];
         }
